@@ -126,27 +126,6 @@
   .qrbox b{display:block;margin:6px 0 4px;font-size:16px}
   .qrbox span{font-size:13px;color:var(--sub);line-height:1.4}
   .phone{padding:10px}
-  .lanes{grid-template-columns:repeat(5,1fr)}
-  @media (max-width:1000px){.lanes{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}}
-  .gl{gap:6px;padding:12px;min-height:420px}
-  .gl:active{transform:none}
-  .glb{font-size:13px;color:var(--sub);font-weight:700;margin-top:4px}
-  .gin{display:flex;align-items:center;gap:6px}
-  .gin input{width:100%;min-width:0;font-size:28px;font-weight:800;text-align:center;padding:6px;border-radius:12px;border:2px solid var(--line)}
-  .gin input:focus{outline:none;border-color:var(--blue)}
-  .gin span{color:var(--sub);font-weight:700}
-  .gm{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
-  .gm button{background:var(--blue-l);border-radius:10px;padding:6px 2px;font-size:13px;font-weight:700;border:2px solid transparent;line-height:1.3}
-  .gm button.on{border-color:var(--blue);background:#cfe3ff}
-  .gstate{font-size:14px;color:var(--sub);font-weight:700;margin-top:auto}
-  .gwarn{display:none;font-size:13px;color:#b42318;background:#ffe5e3;border-radius:8px;padding:6px;font-weight:700}
-  .gtimer{font-size:52px;font-weight:800;text-align:center;margin:auto 0}
-  .gtimer.over{color:var(--red)}
-  .gbig{width:100%;padding:16px 6px;font-size:18px}
-  .grow{display:flex;gap:6px}
-  .gscore{font-size:34px;font-weight:800;text-align:center;margin-top:auto}
-  .gbar{display:flex;justify-content:center;margin:0 0 14px}
-  .gbar .btn{font-size:22px;padding:16px 36px}
 </style>
 </head>
 <body>
@@ -157,11 +136,10 @@
     <header class="top">
       <div>
         <h1>💓 두근두근 <span>심박수를 낮춰라!</span></h1>
-        <p>5명의 숫자와 회복법을 입력한 뒤, 가운데 버튼으로 동시에 회복 타이머를 시작하세요</p>
+        <p>스마트밴드로 만나는 나의 심장 이야기 · 체험할 학생 칸을 눌러 시작하세요</p>
       </div>
       <button class="btn btn-ghost" onclick="askResetAll()">🗑 모두 지우기</button>
     </header>
-    <div class="gbar"><button class="btn btn-main" id="gstart" onclick="gStart()">▶ 동시에 회복 시작</button></div>
     <div class="lanes" id="lanes"></div>
     <p class="note">이름 없이 번호로만 기록해요. 이 화면의 기록은 태블릿에 저장되지 않으며, 새로고침하거나 '지우기'를 누르면 사라져요.</p>
   </section>
@@ -170,7 +148,7 @@
   <section id="flow" class="panel">
     <header class="top">
       <div><h1 id="flowTitle">1번 체험자</h1></div>
-      <button class="btn btn-ghost" onclick="goHome()">← 전체 화면</button>
+      <button class="btn btn-ghost" onclick="askReset(0)">🗑 처음부터</button>
     </header>
     <div class="stepbar" id="stepbar"></div>
     <div id="stepArea"></div>
@@ -2491,7 +2469,7 @@ var qrcode = function() {
 </script>
 <script>
 /* ===== 설정값 (필요하면 숫자만 바꾸세요) ===== */
-const LANES = 5;            // 동시에 체험하는 인원
+const LANES = 1;            // 태블릿 1대에 1명
 const RANGE = 5;            // 회복 기준: 안정 시 심박수 ±5bpm
 const LIMIT = 180;          // 이 심박수 이상이면 즉시 중단 안내
 const RECOVER_SEC = 300;    // 미션2(회복) 제한 시간 5분
@@ -2540,7 +2518,7 @@ function openLane(i){
 /* ===== 단계 화면 ===== */
 function renderStep(){
   const L = lanes[cur];
-  $("#flowTitle").textContent = `${cur+1}번 체험자`;
+  $("#flowTitle").innerHTML = `💓 두근두근 <span style="color:var(--pink)">심박수를 낮춰라!</span>`;
   $("#stepbar").innerHTML = [1,2,3,4,5].map(n=>`<i class="${n<=L.step?'on':''}"></i>`).join("");
   const A = $("#stepArea");
 
@@ -2636,7 +2614,7 @@ function updateTimer(){
   });
   const L=lanes[cur], t=$("#t");
   if(t && L.step===4){ t.textContent = fmt(elapsed(L)); t.classList.toggle("over", elapsed(L)>RECOVER_SEC-30); }
-  if($("#home").classList.contains("on")) renderHome();
+  
 }
 tick = setInterval(updateTimer, 500);
 
@@ -2737,7 +2715,7 @@ function resultHTML(L){
     <p class="note">이 처방전은 오늘 1회 측정한 값으로 만든 생활 습관 조언이에요. 의학적 진단이 아니에요.</p>
     <div class="actions" style="justify-content:center">
       <button class="btn btn-ghost" onclick="goHome()">← 전체 화면</button>
-      <button class="btn btn-pink" onclick="askReset(${cur})">🗑 체험 끝! 기록 지우고 다음 친구</button>
+      <button class="btn btn-pink" onclick="askReset(${cur})">🗑 체험 끝! 기록 지우고 다음 친구 시작</button>
     </div></div>`;
 }
 
@@ -2785,91 +2763,6 @@ function askResetAll(){
 window.addEventListener("beforeunload", e=>{ if(lanes.some(l=>l.step>=4 && l.step<5)){ e.preventDefault(); e.returnValue=""; } });
 
 
-/* ===== 5명 동시 진행 화면 ===== */
-let gSig = "";
-const ready = L => L.rest && L.peak && L.method;
-const used  = L => L.rest || L.peak || L.method || L.step>=4;
-function laneSig(){ return lanes.map(L=>[L.step,L.method,!!L.end,L.step===5?L.after:""].join(".")).join("|"); }
-function renderHome(force){
-  const sig = laneSig();
-  if(force || sig!==gSig || !$("#lanes").children.length){ gSig=sig; buildGroup(); }
-  lanes.forEach((L,i)=>{ const t=$("#gt"+i); if(t && L.step===4 && !L.end){ const e=elapsed(L); t.textContent=fmt(e); t.classList.toggle("over", e>RECOVER_SEC-30); } });
-}
-function buildGroup(){
-  const anyRunning = lanes.some(L=>L.step===4 || L.step===5);
-  const nReady = lanes.filter(L=>L.step<4 && ready(L)).length;
-  $("#lanes").innerHTML = lanes.map((L,i)=>{
-    let body;
-    if(L.step<4){
-      body = `
-        <label class="glb">① 안정 시 심박수</label>
-        <div class="gin"><input type="number" inputmode="numeric" id="gr${i}" value="${L.rest??''}" placeholder="0" oninput="gSet(${i},'rest',this.value)"><span>bpm</span></div>
-        <label class="glb">② 운동 후 최고 심박수</label>
-        <div class="gin"><input type="number" inputmode="numeric" id="gp${i}" value="${L.peak??''}" placeholder="0" oninput="gSet(${i},'peak',this.value)"><span>bpm</span></div>
-        <div class="gwarn" id="gw${i}"></div>
-        <label class="glb">③ 회복법 고르기</label>
-        <div class="gm">${Object.entries(METHODS).map(([k,m])=>`<button class="${L.method===k?'on':''}" onclick="gMethod(${i},'${k}')">${m.em}<br>${m.name}</button>`).join("")}</div>
-        <div class="gstate">${ready(L)?'✅ 준비 완료':'입력 중…'}</div>`;
-    } else if(L.step===4 && !L.end){
-      const m=METHODS[L.method];
-      body = `<div class="gstate">${m.em} ${m.name} 중 · 목표 ${L.rest-RANGE}~${L.rest+RANGE}</div>
-        <div class="gtimer" id="gt${i}">${fmt(elapsed(L))}</div>
-        <button class="btn btn-green gbig" onclick="gDone(${i})">✅ 회복 완료</button>`;
-    } else if(L.step===4){
-      const over = elapsed(L)>=RECOVER_SEC;
-      body = `<div class="gstate">${over?'⏰ 5분 종료':'✅ 회복 완료'} · ${fmt(elapsed(L))}</div>
-        <label class="glb">④ 지금 심박수</label>
-        <div class="gin"><input type="number" inputmode="numeric" id="ga${i}" placeholder="0"><span>bpm</span></div>
-        <div class="gwarn" id="gw${i}"></div>
-        <div class="grow"><button class="btn btn-ghost" ${over?'style="display:none"':''} onclick="gUndo(${i})">취소</button>
-        <button class="btn btn-main" style="flex:1" onclick="gAfter(${i})">확인</button></div>`;
-    } else {
-      const {score,band}=analyze(L);
-      body = `<div class="gscore">${BAND[band].face} ${score}점</div><div class="gstate">${BAND[band].name}</div>
-        <button class="btn btn-pink gbig" onclick="openLane(${i})">📋 처방전·QR 보기</button>`;
-    }
-    return `<div class="lane gl s${L.step}"><div class="no">${i+1}번</div>${body}</div>`;
-  }).join("");
-  const sb=$("#gstart");
-  sb.disabled = nReady===0;
-  sb.textContent = nReady ? `▶ ${nReady}명 동시에 회복 시작` : (anyRunning ? "⏱ 회복 진행 중" : "▶ 동시에 회복 시작");
-}
-function gSet(i,k,v){
-  const L=lanes[i]; v=Math.round(+v); L[k]= v>0 ? v : null;
-  if(L.step===0 && used(L)) L.step=1;
-  const w=$("#gw"+i);
-  if(k==='peak' && w){ if(v>=LIMIT){ w.style.display='block'; w.textContent=`⚠️ ${LIMIT}bpm 이상! 운동을 바로 멈춰요.`; } else w.style.display='none'; }
-  if(ready(L)) L.step=3; else if(L.step===3) L.step=1;
-  refreshStart();
-}
-function refreshStart(){
-  const n=lanes.filter(L=>L.step<4 && ready(L)).length, sb=$("#gstart");
-  sb.disabled=n===0; if(n) sb.textContent=`▶ ${n}명 동시에 회복 시작`;
-  lanes.forEach((L,i)=>{ const card=$("#lanes").children[i]; const st=card&&L.step<4&&card.querySelector('.gstate'); if(st) st.textContent=ready(L)?'✅ 준비 완료':'입력 중…'; });
-}
-function gMethod(i,k){ const L=lanes[i]; L.method=k; if(L.step===0) L.step=1; if(ready(L)) L.step=3; renderHome(true); }
-function gStart(){
-  const list=lanes.map((L,i)=>[L,i]).filter(([L])=>L.step<4 && ready(L));
-  const bad=list.filter(([L,i])=>{
-    const ok = L.rest>=40 && L.rest<=230 && L.peak>=40 && L.peak<=230 && L.peak>L.rest+RANGE;
-    if(!ok){ const w=$("#gw"+i); w.style.display='block'; w.textContent='숫자를 확인해 주세요 (최고 심박수가 안정 시보다 높아야 해요).'; }
-    return !ok;
-  });
-  if(bad.length) return;
-  const now=Date.now();
-  list.forEach(([L])=>{ L.start=now; L.end=null; L.timedOut=false; L.step=4; });
-  renderHome(true);
-}
-function gDone(i){ const L=lanes[i]; L.end=Date.now(); renderHome(true); setTimeout(()=>$("#ga"+i)&&$("#ga"+i).focus(),50); }
-function gUndo(i){ lanes[i].end=null; renderHome(true); }
-function gAfter(i){
-  const L=lanes[i], v=Math.round(+$("#ga"+i).value), w=$("#gw"+i);
-  if(!v||v<40||v>230){ w.style.display='block'; w.textContent='40~230 사이 숫자를 입력해 주세요.'; return; }
-  L.after=v; L.timedOut = elapsed(L)>=RECOVER_SEC; if(L.timedOut) L.end=L.start+RECOVER_SEC*1000;
-  L.step=5; renderHome(true);
-}
-function goHome(){ $("#flow").classList.remove("on"); $("#home").classList.add("on"); renderHome(true); }
-
 /* ===== QR코드: 휴대폰으로 결과 받기 ===== */
 const RESULT_URL = "https://solovelykwak-art.github.io/heart-result/";   // 휴대폰 결과 페이지 주소
 function resultLink(L){
@@ -2885,8 +2778,7 @@ function resultHTML(L){
   </div>
   <p class="note">이 처방전은 오늘 1회 측정한 값으로 만든 생활 습관 조언이에요. 의학적 진단이 아니에요.</p>
   <div class="actions" style="justify-content:center">
-    <button class="btn btn-ghost" onclick="goHome()">← 전체 화면</button>
-    <button class="btn btn-pink" onclick="askReset(${cur})">🗑 체험 끝! 기록 지우고 다음 친구</button>
+    <button class="btn btn-pink" onclick="askReset(${cur})">🗑 체험 끝! 기록 지우고 다음 친구 시작</button>
   </div>`;
 }
 /* 주소에 결과 숫자가 붙어 있으면(휴대폰에서 QR로 연 경우) 처방전만 보여 줘요 */
@@ -2901,7 +2793,9 @@ function resultHTML(L){
     <p class="note">화면을 캡처하면 내 처방전을 사진으로 간직할 수 있어요 📸<br>이 처방전은 오늘 1회 측정한 값으로 만든 생활 습관 조언이에요. 의학적 진단이 아니에요.<br>2026 AI·SW 체험 한마당 · 장산초등학교</p></div>`;
 })();
 
-if(!new URLSearchParams(location.search).has("r")) renderHome();
+/* 1인용: 첫 화면 없이 바로 시작, 지우면 처음 단계로 */
+function goHome(){ openLane(0); }
+if(!new URLSearchParams(location.search).has("r")) openLane(0);
 </script>
 </body>
 </html>
