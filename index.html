@@ -128,6 +128,11 @@
   .phone{padding:10px}
   .pic.hq{max-width:900px}
   .res .pic.hq{flex:0 1 900px}
+  .restbox{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--blue-l);border-radius:16px;padding:12px 18px;margin-bottom:16px}
+  .restbox .timer{font-size:52px;margin:0;min-width:140px}
+  .restbox .timer.done{color:var(--green)}
+  .rtmsg{font-size:17px;color:var(--sub)}
+  .rtmsg b{color:var(--green)}
 </style>
 </head>
 <body>
@@ -2473,7 +2478,8 @@ var qrcode = function() {
 /* ===== 설정값 (필요하면 숫자만 바꾸세요) ===== */
 const LANES = 1;            // 태블릿 1대에 1명
 const RANGE = 5;            // 회복 기준: 안정 시 심박수 ±5bpm
-const LIMIT = 180;          // 이 심박수 이상이면 즉시 중단 안내
+const LIMIT = 200;          // 이 심박수 이상이면 즉시 중단 안내
+const REST_SEC = 60;        // 안정 시 심박수 재기 전 쉬는 시간
 const RECOVER_SEC = 300;    // 미션2(회복) 제한 시간 5분
 
 const METHODS = {
@@ -2527,7 +2533,10 @@ function renderStep(){
   if(L.step===1){
     A.innerHTML = `<div class="box">
       <h2>① 안정 시 심박수</h2>
-      <p class="hint">편하게 앉아 1분 정도 쉰 뒤, 스마트밴드에 나온 숫자를 입력하세요. 이 숫자가 '기준값'이 돼요.</p>
+      <p class="hint">편하게 앉아 1분 동안 쉰 뒤, 스마트밴드에 나온 숫자를 입력하세요. 이 숫자가 '기준값'이 돼요.</p>
+      <div class="restbox"><div class="timer" id="rt">${fmt(REST_SEC)}</div>
+        <button class="btn btn-green" id="rtb" onclick="startRest()">⏱ 1분 쉬기 시작</button>
+        <div class="rtmsg" id="rtm">버튼을 누르고 편하게 앉아 숨을 고르세요.</div></div>
       ${numInput("v", L.rest)}
       <div class="warn" id="w"></div>
       <div class="actions"><button class="btn btn-main" onclick="saveRest()">다음 ▶</button></div></div>`;
@@ -2786,6 +2795,21 @@ function picResult(L){
     <div class="ov" style="${at(874,596,420,112)};background:#fbfefd;flex-direction:column;align-items:flex-start;justify-content:space-around;${fs(19)};color:#1f2a5c;font-weight:600;text-align:left;white-space:nowrap">
       ${B.strengths.map(s=>`<div>${s}</div>`).join("")}</div>
   </div>`;
+}
+
+
+/* ===== 안정 시 심박수: 1분 쉬기 타이머 ===== */
+let restTick=null;
+function startRest(){
+  clearInterval(restTick);
+  const end=Date.now()+REST_SEC*1000, b=$("#rtb"), m=$("#rtm"), t=$("#rt");
+  b.textContent="⏱ 다시 시작"; m.textContent="편하게 앉아 숨을 고르는 중이에요…";
+  restTick=setInterval(()=>{
+    if(!$("#rt")){ clearInterval(restTick); return; }
+    const left=(end-Date.now())/1000;
+    t.textContent=fmt(Math.ceil(Math.max(0,left)));
+    if(left<=0){ clearInterval(restTick); t.classList.add("done"); m.innerHTML="<b>✅ 1분 끝! 지금 스마트밴드 숫자를 입력하세요.</b>"; $("#v").focus(); }
+  },250);
 }
 
 /* ===== QR코드: 휴대폰으로 결과 받기 ===== */
