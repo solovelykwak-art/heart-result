@@ -2541,25 +2541,25 @@ function renderStep(){
       <div class="warn" id="w"></div>
       <div class="actions"><button class="btn btn-main" onclick="saveRest()">다음 ▶</button></div></div>`;
   }
-  if(L.step===2){
+  if(L.step===3){
     A.innerHTML = `<div class="box">
-      <h2>② 미션1 · 심박수 UP! 🔥</h2>
+      <h2>③ 미션1 · 심박수 UP! 🔥</h2>
       <p class="hint">버피테스트로 심박수를 올려요(8~10회, 체력에 맞게). <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b><br>운동이 끝난 순간 밴드에 나온 가장 높은 심박수를 입력하세요.</p>
       ${numInput("v", L.peak)}
       <div class="warn" id="w"></div>
       <div class="actions">
         <button class="btn btn-ghost" onclick="back()">◀ 이전</button>
-        <button class="btn btn-main" onclick="savePeak()">다음 ▶</button></div></div>`;
+        <button class="btn btn-main" onclick="savePeak()">다음 ▶ 회복 타이머 시작</button></div></div>`;
     $("#v").addEventListener("input", e=>{
       const v=+e.target.value, w=$("#w");
       if(v>=LIMIT){ w.style.display="block"; w.textContent=`⚠️ ${LIMIT}bpm 이상이에요! 운동을 바로 멈추고 회복 활동으로 넘어가세요.`; }
       else w.style.display="none";
     });
   }
-  if(L.step===3){
+  if(L.step===2){
     A.innerHTML = `<div class="box">
-      <h2>③ 미션2 · 나만의 회복법 고르기 🌈</h2>
-      <p class="hint">체험자가 직접 하나를 눌러요. 누르는 순간 회복 타이머가 시작돼요.</p>
+      <h2>② 나만의 회복법 고르기 🌈</h2>
+      <p class="hint">체험자가 직접 하나를 눌러요. 운동이 끝나면 이 방법으로 심박수를 낮출 거예요.</p>
       <div class="methods">${Object.entries(METHODS).map(([k,m])=>`
         <button class="method" onclick="pickMethod('${k}')"><div class="em">${m.em}</div><b>${m.name}</b><small>${m.desc}</small></button>`).join("")}
       </div>
@@ -2568,12 +2568,12 @@ function renderStep(){
   if(L.step===4){
     const m = METHODS[L.method];
     A.innerHTML = `<div class="box">
-      <h2>④ ${m.em} ${m.name}으로 심박수 DOWN 💧</h2>
+      <h2>④ 미션2 · ${m.em} ${m.name}으로 심박수 DOWN 💧</h2>
       <p class="hint">기준값 <b>${L.rest}bpm</b> · 목표: <b>${L.rest-RANGE}~${L.rest+RANGE}bpm</b> 안으로 돌아오기 (제한 ${RECOVER_SEC/60}분)</p>
       <div class="timer" id="t">0:00</div>
       <div class="guide">${m.guide}</div>
       <div class="actions">
-        <button class="btn btn-ghost" onclick="cancelTimer()">◀ 회복법 다시 고르기</button>
+        <button class="btn btn-ghost" onclick="cancelTimer()">◀ 이전</button>
         <button class="btn btn-green" style="flex:1;font-size:22px;padding:18px" onclick="askAfter(false)">✅ 회복 완료 (목표 안에 들어왔어요)</button>
       </div></div>`;
     updateTimer();
@@ -2589,15 +2589,17 @@ function readNum(){
   return v;
 }
 function back(){ lanes[cur].step--; renderStep(); }
-function saveRest(){ const v=readNum(); if(v==null) return; lanes[cur].rest=v; lanes[cur].step=2; renderStep(); }
+function saveRest(){ const v=readNum(); if(v==null) return; clearInterval(restTick); stopRain(); lanes[cur].rest=v; lanes[cur].step=2; renderStep(); }
 function savePeak(){
   const v=readNum(); if(v==null) return;
   const L=lanes[cur];
   if(v<=L.rest+RANGE){ const w=$("#w"); w.style.display="block"; w.textContent=`안정 시 심박수(${L.rest})보다 충분히 높아야 해요. 숫자를 다시 확인해 주세요.`; return; }
-  L.peak=v; L.step=3; renderStep();
+  L.peak=v; L.start=Date.now(); L.end=null; L.step=4;
+  if(L.method==="mind") playBowl();
+  renderStep();
 }
-function pickMethod(k){ if(k==="mind") playBowl(); const L=lanes[cur]; L.method=k; L.start=Date.now(); L.end=null; L.step=4; renderStep(); }
-function cancelTimer(){ const L=lanes[cur]; L.start=null; L.method=null; L.step=3; renderStep(); }
+function pickMethod(k){ const L=lanes[cur]; L.method=k; L.step=3; renderStep(); }
+function cancelTimer(){ const L=lanes[cur]; L.start=null; L.end=null; L.step=3; renderStep(); }
 
 /* 회복 완료 / 시간 종료: 회복 후 심박수 입력 */
 function askAfter(timedOut){
@@ -2765,7 +2767,7 @@ function showModal(title, html, onOk, onCancel){
 function closeModal(){ $("#modal").classList.remove("on"); if(mCancel) mCancel(); }
 function askReset(i){
   showModal("기록을 지울까요?", `${i+1}번 체험자의 심박수 기록을 모두 지워요. 지운 기록은 되돌릴 수 없어요.`,
-    ()=>{ lanes[i]=blank(); goHome(); });
+    ()=>{ clearInterval(restTick); stopRain(); lanes[i]=blank(); goHome(); });
 }
 function askResetAll(){
   showModal("모두 지울까요?", "5명 모두의 기록을 지워요. 지운 기록은 되돌릴 수 없어요.",
@@ -2803,12 +2805,13 @@ let restTick=null;
 function startRest(){
   clearInterval(restTick);
   const end=Date.now()+REST_SEC*1000, b=$("#rtb"), m=$("#rtm"), t=$("#rt");
-  b.textContent="⏱ 다시 시작"; m.textContent="편하게 앉아 숨을 고르는 중이에요…";
+  b.textContent="⏱ 다시 시작"; m.textContent="🌧 창가 빗소리를 들으며 편하게 숨을 골라요…";
+  stopRain(); startRain();
   restTick=setInterval(()=>{
-    if(!$("#rt")){ clearInterval(restTick); return; }
+    if(!$("#rt")){ clearInterval(restTick); stopRain(); return; }
     const left=(end-Date.now())/1000;
     t.textContent=fmt(Math.ceil(Math.max(0,left)));
-    if(left<=0){ clearInterval(restTick); t.classList.add("done"); m.innerHTML="<b>✅ 1분 끝! 지금 스마트밴드 숫자를 입력하세요.</b>"; $("#v").focus(); }
+    if(left<=0){ clearInterval(restTick); stopRain(); t.classList.add("done"); m.innerHTML="<b>✅ 1분 끝! 지금 스마트밴드 숫자를 입력하세요.</b>"; $("#v").focus(); }
   },250);
 }
 
@@ -2829,6 +2832,37 @@ function playBowl(){
       o.connect(v); v.connect(out); o.start(now); o.stop(now+d+0.1);
     });
   }catch(e){}
+}
+
+
+/* ===== 창가 빗소리 (1분 쉬는 동안) ===== */
+let rain=null;
+function startRain(){
+  try{
+    const C=window.AudioContext||window.webkitAudioContext; const ac=new C();
+    const len=ac.sampleRate*2, buf=ac.createBuffer(1,len,ac.sampleRate), d=buf.getChannelData(0);
+    let last=0; for(let i=0;i<len;i++){ const w=Math.random()*2-1; last=(last+0.06*w)/1.06; d[i]=last*3; }  // 부드러운 빗소리 바탕
+    const src=ac.createBufferSource(); src.buffer=buf; src.loop=true;
+    const lp=ac.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1800;
+    const hp=ac.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=250;
+    const out=ac.createGain(); out.gain.setValueAtTime(0,ac.currentTime); out.gain.linearRampToValueAtTime(0.5,ac.currentTime+2);
+    src.connect(lp); lp.connect(hp); hp.connect(out); out.connect(ac.destination); src.start();
+    // 창문에 톡톡 떨어지는 빗방울
+    const drop=()=>{
+      const n=ac.createBufferSource(), b=ac.createBuffer(1,ac.sampleRate*0.03,ac.sampleRate), c=b.getChannelData(0);
+      for(let i=0;i<c.length;i++) c[i]=(Math.random()*2-1)*Math.pow(1-i/c.length,4);
+      n.buffer=b; const bp=ac.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=2500+Math.random()*3500; bp.Q.value=6;
+      const g=ac.createGain(); g.gain.value=0.15+Math.random()*0.35;
+      n.connect(bp); bp.connect(g); g.connect(out); n.start();
+    };
+    const timer=setInterval(()=>{ const k=1+Math.floor(Math.random()*3); for(let i=0;i<k;i++) setTimeout(drop,Math.random()*120); },140);
+    rain={ac,out,timer};
+  }catch(e){ rain=null; }
+}
+function stopRain(){
+  if(!rain) return; const r=rain; rain=null;
+  clearInterval(r.timer);
+  try{ r.out.gain.cancelScheduledValues(r.ac.currentTime); r.out.gain.setValueAtTime(r.out.gain.value,r.ac.currentTime); r.out.gain.linearRampToValueAtTime(0,r.ac.currentTime+1.5); setTimeout(()=>r.ac.close(),1700); }catch(e){}
 }
 
 /* ===== QR코드: 휴대폰으로 결과 받기 ===== */
