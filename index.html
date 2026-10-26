@@ -2806,7 +2806,7 @@ let restTick=null;
 function startRest(){
   clearInterval(restTick);
   const end=Date.now()+REST_SEC*1000, b=$("#rtb"), m=$("#rtm"), t=$("#rt");
-  b.textContent="⏱ 다시 시작"; m.textContent="🌧 창가 빗소리를 들으며 편하게 숨을 골라요…";
+  b.textContent="⏱ 다시 시작"; m.textContent="🐦 새소리를 들으며 편하게 숨을 골라요…";
   stopRain(); startRain();
   restTick=setInterval(()=>{
     if(!$("#rt")){ clearInterval(restTick); stopRain(); return; }
@@ -2848,27 +2848,42 @@ function stopBowl(){
   (window.__bowlOuts||[]).forEach(o=>{ try{ o.gain.cancelScheduledValues(ac.currentTime); o.gain.setValueAtTime(o.gain.value,ac.currentTime); o.gain.linearRampToValueAtTime(0,ac.currentTime+1.5); }catch(e){} });
 }
 
-/* ===== 창가 빗소리 (1분 쉬는 동안) ===== */
+/* ===== 자연의 소리: 새소리 + 잔잔한 바람 (1분 쉬는 동안) ===== */
 let rain=null;
 function startRain(){
   try{
     const C=window.AudioContext||window.webkitAudioContext; const ac=new C();
-    const len=ac.sampleRate*2, buf=ac.createBuffer(1,len,ac.sampleRate), d=buf.getChannelData(0);
-    let last=0; for(let i=0;i<len;i++){ const w=Math.random()*2-1; last=(last+0.06*w)/1.06; d[i]=last*3; }  // 부드러운 빗소리 바탕
+    const out=ac.createGain(); out.gain.setValueAtTime(0,ac.currentTime); out.gain.linearRampToValueAtTime(0.7,ac.currentTime+2); out.connect(ac.destination);
+    // 잔잔한 바람·나뭇잎 소리 바탕
+    const len=ac.sampleRate*3, buf=ac.createBuffer(1,len,ac.sampleRate), d=buf.getChannelData(0);
+    let last=0; for(let i=0;i<len;i++){ const w=Math.random()*2-1; last=(last+0.02*w)/1.02; d[i]=last*3.5; }
     const src=ac.createBufferSource(); src.buffer=buf; src.loop=true;
-    const lp=ac.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1800;
-    const hp=ac.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=250;
-    const out=ac.createGain(); out.gain.setValueAtTime(0,ac.currentTime); out.gain.linearRampToValueAtTime(0.5,ac.currentTime+2);
-    src.connect(lp); lp.connect(hp); hp.connect(out); out.connect(ac.destination); src.start();
-    // 창문에 톡톡 떨어지는 빗방울
-    const drop=()=>{
-      const n=ac.createBufferSource(), b=ac.createBuffer(1,ac.sampleRate*0.03,ac.sampleRate), c=b.getChannelData(0);
-      for(let i=0;i<c.length;i++) c[i]=(Math.random()*2-1)*Math.pow(1-i/c.length,4);
-      n.buffer=b; const bp=ac.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=2500+Math.random()*3500; bp.Q.value=6;
-      const g=ac.createGain(); g.gain.value=0.15+Math.random()*0.35;
-      n.connect(bp); bp.connect(g); g.connect(out); n.start();
+    const lp=ac.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=900;
+    const bg=ac.createGain(); bg.gain.value=0.18;
+    const lfo=ac.createOscillator(), lfoG=ac.createGain(); lfo.frequency.value=0.12; lfoG.gain.value=0.08; lfo.connect(lfoG); lfoG.connect(bg.gain); lfo.start();
+    src.connect(lp); lp.connect(bg); bg.connect(out); src.start();
+    // 새 지저귐: 짧은 음을 여러 번 빠르게
+    const note=(t,f0,f1,dur,vol,pan)=>{
+      const o=ac.createOscillator(), g=ac.createGain(), pn=ac.createStereoPanner?ac.createStereoPanner():null;
+      o.type="sine"; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f1,t+dur);
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+dur*0.15); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      o.connect(g); if(pn){ pn.pan.value=pan; g.connect(pn); pn.connect(out); } else g.connect(out);
+      o.start(t); o.stop(t+dur+0.05);
     };
-    const timer=setInterval(()=>{ const k=1+Math.floor(Math.random()*3); for(let i=0;i<k;i++) setTimeout(drop,Math.random()*120); },140);
+    const birds=[
+      ()=>{ // 짹짹 (참새)
+        const t=ac.currentTime, n=2+Math.floor(Math.random()*4), pan=Math.random()*1.6-.8;
+        for(let k=0;k<n;k++){ const f=3200+Math.random()*900; note(t+k*0.13,f,f*1.35,0.08,0.10,pan); } },
+      ()=>{ // 삐요~ (휘파람새 느낌)
+        const t=ac.currentTime, pan=Math.random()*1.6-.8;
+        note(t,1900,2600,0.45,0.08,pan); note(t+0.55,2600,1800,0.35,0.07,pan); },
+      ()=>{ // 또르르 (트릴)
+        const t=ac.currentTime, pan=Math.random()*1.6-.8;
+        for(let k=0;k<8;k++){ const f=4200-k*120; note(t+k*0.05,f,f*0.9,0.04,0.06,pan); } }
+    ];
+    const sing=()=>{ birds[Math.floor(Math.random()*birds.length)](); };
+    const timer=setInterval(()=>{ if(Math.random()<0.55) sing(); },700);
+    setTimeout(sing,400);
     rain={ac,out,timer};
   }catch(e){ rain=null; }
 }
