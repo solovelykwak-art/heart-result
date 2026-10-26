@@ -2480,15 +2480,15 @@ const LANES = 1;            // 태블릿 1대에 1명
 const RANGE = 5;            // 회복 기준: 안정 시 심박수 ±5bpm
 const LIMIT = 200;          // 이 심박수 이상이면 즉시 중단 안내
 const REST_SEC = 60;        // 안정 시 심박수 재기 전 쉬는 시간
-const RECOVER_SEC = 300;    // 미션2(회복) 제한 시간 5분
+const RECOVER_SEC = 600;    // 미션2(회복) 제한 시간 10분
 
 const METHODS = {
   breath:{em:"🌬️",name:"호흡법",desc:"4초 들이마시고, 4초 멈추고, 6초 내쉬기",
     guide:"코로 4초 천천히 들이마시고 → 4초 멈추고 → 입으로 6초 동안 길게 내쉬어요. 배가 풍선처럼 부풀었다 줄어드는 것을 느껴 보세요."},
   stretch:{em:"🧘",name:"스트레칭",desc:"천천히 몸을 늘이며 긴장 풀기",
     guide:"두 팔을 머리 위로 쭉 뻗고 10초, 어깨를 천천히 5번 돌리고, 목을 좌우로 기울여요. 숨은 멈추지 말고 편하게 쉬어요."},
-  mind:{em:"🌿",name:"마음챙김",desc:"눈을 감고 지금 내 몸에 집중하기",
-    guide:"편하게 앉아 눈을 감아요. 들리는 소리 3가지, 느껴지는 몸의 감각 3가지를 마음속으로 하나씩 세어 보세요."}
+  mind:{em:"🔔",name:"싱잉볼 마음챙김",desc:"눈을 감고 지금 내 몸에 집중하기",
+    guide:"편하게 앉아 눈을 감아요. 싱잉볼 소리가 완전히 사라질 때까지 귀를 기울이며 천천히 숨을 쉬어요. <button class=\"btn btn-ghost\" style=\"padding:6px 12px;font-size:15px\" onclick=\"playBowl()\">🔔 다시 울리기</button>"}
 };
 
 /* ===== 상태 (메모리에만 보관, 저장 안 함) ===== */
@@ -2596,7 +2596,7 @@ function savePeak(){
   if(v<=L.rest+RANGE){ const w=$("#w"); w.style.display="block"; w.textContent=`안정 시 심박수(${L.rest})보다 충분히 높아야 해요. 숫자를 다시 확인해 주세요.`; return; }
   L.peak=v; L.step=3; renderStep();
 }
-function pickMethod(k){ const L=lanes[cur]; L.method=k; L.start=Date.now(); L.end=null; L.step=4; renderStep(); }
+function pickMethod(k){ if(k==="mind") playBowl(); const L=lanes[cur]; L.method=k; L.start=Date.now(); L.end=null; L.step=4; renderStep(); }
 function cancelTimer(){ const L=lanes[cur]; L.start=null; L.method=null; L.step=3; renderStep(); }
 
 /* 회복 완료 / 시간 종료: 회복 후 심박수 입력 */
@@ -2605,7 +2605,7 @@ function askAfter(timedOut){
   if(!L.end) L.end = Date.now();
   L.timedOut = timedOut || elapsed(L) > RECOVER_SEC;
   if(L.timedOut) L.end = L.start + RECOVER_SEC*1000;
-  showModal(L.timedOut ? "⏰ 5분이 지났어요" : "✅ 회복 완료!",
+  showModal(L.timedOut ? `⏰ ${RECOVER_SEC/60}분이 지났어요` : "✅ 회복 완료!",
     `${fmt(elapsed(L))} 걸렸어요. 지금 스마트밴드에 나온 심박수를 입력해 주세요.<br><br>${numInput("v2","")}<div class="warn" id="w2"></div>`,
     ()=>{
       const v=Math.round(+$("#v2").value);
@@ -2685,7 +2685,7 @@ function gaugeSVG(score){
 
 function resultHTML(L){
   const {t,score,band} = analyze(L), B=BAND[band], m=METHODS[L.method];
-  const timeTxt = L.timedOut ? `5분 동안 ${L.peak-L.after}bpm 내려왔어요` : `${Math.floor(t/60)}분 ${Math.round(t%60)}초`;
+  const timeTxt = L.timedOut ? `${RECOVER_SEC/60}분 동안 ${L.peak-L.after}bpm 내려왔어요` : `${Math.floor(t/60)}분 ${Math.round(t%60)}초`;
   return `<div class="rx">
     <div class="rx-head"><span class="ai">🤖 AI가 분석한</span>
       <h2>나만의 <em>감정 조절</em> 처방전</h2>
@@ -2810,6 +2810,25 @@ function startRest(){
     t.textContent=fmt(Math.ceil(Math.max(0,left)));
     if(left<=0){ clearInterval(restTick); t.classList.add("done"); m.innerHTML="<b>✅ 1분 끝! 지금 스마트밴드 숫자를 입력하세요.</b>"; $("#v").focus(); }
   },250);
+}
+
+
+/* ===== 싱잉볼 소리 (마음챙김을 누르면 울려요) ===== */
+const BOWL_FILE = "";   // 싱잉볼 소리 파일이 있으면 여기에 넣어요 (비어 있으면 앱이 직접 만든 소리)
+function playBowl(){
+  try{
+    if(BOWL_FILE){ const a=new Audio(BOWL_FILE); a.play(); return; }
+    const C=window.AudioContext||window.webkitAudioContext; const ac=new C();
+    const now=ac.currentTime, out=ac.createGain(); out.gain.value=0.6; out.connect(ac.destination);
+    // 싱잉볼처럼 여러 배음이 천천히 사라지는 소리
+    [[220,1,9],[221.6,.6,9],[598,.45,6],[600.8,.3,6],[1133,.18,4],[1764,.08,3]].forEach(([f,g,d])=>{
+      const o=ac.createOscillator(), v=ac.createGain();
+      o.type="sine"; o.frequency.value=f;
+      v.gain.setValueAtTime(0,now); v.gain.linearRampToValueAtTime(g,now+0.02);
+      v.gain.exponentialRampToValueAtTime(0.0001,now+d);
+      o.connect(v); v.connect(out); o.start(now); o.stop(now+d+0.1);
+    });
+  }catch(e){}
 }
 
 /* ===== QR코드: 휴대폰으로 결과 받기 ===== */
