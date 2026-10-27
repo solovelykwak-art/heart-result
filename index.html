@@ -158,6 +158,8 @@
   .restlabel{font-size:19px;font-weight:800;color:#1f4f99;margin:4px 0 8px}
   .breath .voicebtn{margin-left:auto;align-self:flex-start;font-size:16px;padding:10px 14px}
   .restbox.check{background:#fff1d6;outline:3px solid #f59e0b;animation:pulse 1s 3}
+  .cool{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#effaf3;border:2px solid #9be0b5;border-radius:18px;padding:18px 24px;margin:10px 0;font-size:20px;color:#14532d}
+  .cool .ccount{font-size:48px;font-weight:800;color:#16a34a;margin-left:auto}
   .okmsg{margin-top:14px;padding:14px 16px;border-radius:14px;background:#e3f8ec;color:#137a45;font-weight:700;font-size:18px;display:none}
 </style>
 </head>
@@ -2510,6 +2512,7 @@ const RANGE = 5;            // 회복 기준: 안정 시 심박수 ±5bpm
 const LIMIT = 200;          // 이 심박수 이상이면 즉시 중단 안내
 const TARGET = 150;         // 미션1 목표 심박수
 const EX_SEC = 120;         // 미션1 운동 시간(2분 고정, 쉬지 않고)
+const COOL_SEC = 30;        // 운동 끝나고 정리운동 시간(초), 그다음 심호흡
 const CHECK_SEC = 30;       // 운동 중 밴드 확인 알림 간격(초)
 const HRR_SEC = 120;        // 심박 회복: 회복 시작 후 이 시간(2분)에 심박수를 재요
 const REST_SEC = 60;        // 안정 시 심박수 재기 전 쉬는 시간
@@ -2602,8 +2605,8 @@ function renderStep(){
   }
   if(L.step===4){
     A.innerHTML = `<div class="box">
-      <h2>③ 미션2 · 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
-      ${helper(`수고했어요! 이제 파란 공과 목소리를 따라 천천히 심호흡해 보세요.`,
+      <h2>③ 미션2 · 🚶 정리운동 ${COOL_SEC}초 → 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
+      ${helper(`수고했어요! 먼저 ${COOL_SEC}초 동안 제자리에서 천천히 걸으며 팔을 흔들어요. 그다음 파란 공과 목소리를 따라 심호흡해 보세요.`,
         [`지금 바로 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장]`, `${HRR_SEC/60}분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장]`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
       <div style="display:flex;align-items:center;gap:16px"><div class="timer" id="t" style="font-size:56px;margin:0">0:00</div>
         <p class="hint" style="margin:0">기준값 <b>${L.rest}bpm</b> · 회복 목표 <b>${L.rest-RANGE}~${L.rest+RANGE}bpm</b> (최대 ${RECOVER_SEC/60}분)</p></div>
@@ -2619,7 +2622,8 @@ function renderStep(){
         <input id="h1" type="number" inputmode="numeric" min="40" max="230" placeholder="0" value="${L.hr1??''}">
         <button class="btn btn-main" onclick="saveHr1()">저장</button>
       </div>
-      <div class="breath" id="bg"><div class="ball" id="bball"></div>
+      <div class="cool" id="cool">🚶 <b>정리운동</b> 제자리에서 천천히 걸으며 팔을 가볍게 흔들어요 <span class="ccount" id="ccount">${COOL_SEC}</span><span>초 뒤 심호흡 시작</span></div>
+      <div class="breath" id="bg" style="display:none"><div class="ball" id="bball"></div>
         <div><div class="bph" id="bph">코로 들이마셔요</div><div class="bsec" id="bsec">4</div>
         <div class="bsteps"><span id="bs0">👃 들이마시기 4초</span> → <span id="bs1">✋ 멈추기 4초</span> → <span id="bs2">👄 내쉬기 6초</span></div></div>
         <button class="btn btn-ghost voicebtn" id="vbtn" onclick="toggleVoice()">${voiceOn?'🔊 음성 안내 켜짐':'🔇 음성 안내 꺼짐'}</button></div>
@@ -2754,7 +2758,12 @@ function toggleVoice(){
 setInterval(()=>{
   const bg=$("#bg"), L=lanes[cur];
   if(!bg || !L || !L.start){ if(lastPhase!==-1){ lastPhase=-1; try{ speechSynthesis.cancel(); }catch(e){} } return; }
-  let s=((Date.now()-L.start)/1000) % BREATH.reduce((a,b)=>a+b.sec,0), i=0;
+  const el=((L.end ?? Date.now())-L.start)/1000, cool=$("#cool");
+  if(el < COOL_SEC){ if(cool){ cool.style.display="flex"; $("#ccount").textContent=Math.ceil(COOL_SEC-el); } bg.style.display="none"; lastPhase=-1; return; }
+  if(cool && cool.style.display!=="none"){ cool.style.display="none"; bg.style.display="flex"; say("이제 심호흡을 시작해요"); lastPhase=-2; return; }
+  bg.style.display="flex";
+  if(lastPhase===-2 && el < COOL_SEC+1.6) return;   // 시작 안내 말이 끝나도록 잠깐 기다려요
+  let s=(el-COOL_SEC) % BREATH.reduce((a,b)=>a+b.sec,0), i=0;
   while(s>=BREATH[i].sec){ s-=BREATH[i].sec; i++; }
   const ph=BREATH[i], k=s/ph.sec;
   $("#bph").textContent=ph.txt;
@@ -3042,7 +3051,7 @@ function finishEx(){
   const L=lanes[cur];
   L.peak=null; L.hr1=null; L.after=null; L.timedOut=false; L.method="breath";
   L.start=Date.now(); L.end=null; L.step=4;
-  announce("운동 끝! 심박수를 확인하고 심호흡을 시작하세요");
+  announce("운동 끝! 심박수를 확인하고, 제자리 걷기로 정리운동을 해요");
   renderStep();
   setTimeout(()=>$("#pk")&&$("#pk").focus(),50);
 }
