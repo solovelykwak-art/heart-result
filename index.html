@@ -2523,11 +2523,13 @@ const RANGE = 5;            // 회복 기준: 안정 시 심박수 ±5bpm
 const LIMIT = 200;          // 이 심박수 이상이면 즉시 중단 안내
 const TARGET = 150;         // 미션1 목표 심박수
 const EX_SEC = 120;         // 미션1 운동 시간(2분 고정, 쉬지 않고)
-const COOL = [               // 운동 끝나고 정리운동(각 10초), 그다음 심호흡
-  {sec:10, em:"🙌", name:"팔다리 털기"},
+const COOL = [               // 운동 끝 → 밴드 보여 주기 10초 → 정리운동(각 10초) → 심호흡
+  {sec:10, em:"⌚", name:"밴드를 도우미에게 보여 주세요", short:"밴드 보여 주기"},
+  {sec:10, em:"🙌", name:"팔다리 털기", say:"이제 정리운동을 해요. 팔다리 털기"},
   {sec:10, em:"💪", name:"어깨 돌리기"},
   {sec:10, em:"🦵", name:"무릎 돌리기"}];
 const COOL_SEC = COOL.reduce((a,c)=>a+c.sec,0);
+const MOVE_SEC = COOL_SEC - COOL[0].sec;   // 정리운동만의 시간
 const CHECK_SEC = 30;       // 운동 중 밴드 확인 알림 간격(초)
 const HRR_SEC = 120;        // 심박 회복: 회복 시작 후 이 시간(2분)에 심박수를 재요
 const REST_SEC = 60;        // 안정 시 심박수 재기 전 쉬는 시간
@@ -2603,8 +2605,8 @@ function renderStep(){
   if(L.step===3){
     A.innerHTML = `<div class="box">
       <h2>② 미션1 · 심박수 UP! 🔥 (${EX_SEC/60}분)</h2>
-      ${helper(`먼저 대표 도우미가 버피테스트 3번을 보여 줄 거예요. 잘 보고 따라 해 주세요. 대표 도우미가 "시작!"을 외치면 ${EX_SEC/60}분 동안 쉬지 않고 버피테스트를 해요. 천천히라도 멈추지 말아 주세요. 목표는 ${TARGET}bpm이에요! "심박수를 확인하세요" 소리가 나면 잠깐 손목을 보여 주세요.${bestLine()}`,
-        [`대표 도우미가 버피테스트 3번을 천천히 시범으로 보여 줘요 (앉기 → 다리 뒤로 → 다시 모으기 → 점프)`, `대표 도우미가 "시작!"을 외치면 도우미 5명 모두 함께 [🔥 운동 시작]을 눌러요`, `${CHECK_SEC}초마다 알림이 오면 친구 밴드 숫자를 봐요 (${LIMIT} 넘으면 바로 멈추게 해요)`, `"조금만 더 힘내세요!" 응원해요`, `${EX_SEC/60}분이 끝나면 화면이 저절로 회복 단계로 넘어가요`])}
+      ${helper(`먼저 대표 도우미가 버피테스트 3번을 보여 줄 거예요. 잘 보고 따라 해 주세요. 대표 도우미가 "시작!"을 외치면 ${EX_SEC/60}분 동안 쉬지 않고 버피테스트를 해요. 천천히라도 멈추지 말아 주세요. 목표는 ${TARGET}bpm이에요! ${CHECK_SEC}초마다 "내 심박수를 확인해 보세요" 소리가 나면 내 밴드를 보고 힘을 조절해요. ${TARGET}이 안 되면 조금 더 빠르게, 너무 힘들면 천천히 해요. 운동이 끝나면 밴드를 도우미에게 보여 주세요.${bestLine()}`,
+        [`대표 도우미가 버피테스트 3번을 천천히 시범으로 보여 줘요 (앉기 → 다리 뒤로 → 다시 모으기 → 점프)`, `대표 도우미가 "시작!"을 외치면 도우미 5명 모두 함께 [🔥 운동 시작]을 눌러요`, `${CHECK_SEC}초마다 알림이 오면 친구가 스스로 밴드를 보고 속도를 조절해요 (도우미는 기록하지 않아도 돼요. 많이 힘들어 보이면 천천히 하게 해요)`, `"조금만 더 힘내세요!" 응원해요`, `${EX_SEC/60}분이 끝나면 화면이 저절로 넘어가요. 친구 밴드를 보고 운동 직후 심박수를 입력해요`])}
       <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안 쉬지 않고</b> 해요. 목표는 <b>${TARGET}bpm</b>! 천천히라도 내 속도로 계속해요. 힘들면 팔 동작 없이 앉았다 일어나기로 바꿔도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>
       <div class="restbox"><div class="timer" id="et">${fmt(EX_SEC)}</div>
         <button class="btn btn-green" id="etb" onclick="startEx()">🔥 운동 시작</button>
@@ -2624,9 +2626,9 @@ function renderStep(){
   }
   if(L.step===4){
     A.innerHTML = `<div class="box">
-      <h2>③ 미션2 · 🚶 정리운동 ${COOL_SEC}초 → 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
-      ${helper(`수고했어요! 먼저 정리운동으로 팔다리 털기, 어깨 돌리기, 무릎 돌리기를 10초씩 해요. 그다음 파란 공과 목소리를 따라 심호흡해 보세요.`,
-        [`지금 바로 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장]`, `${HRR_SEC/60}분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장]`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
+      <h2>③ 미션2 · ⌚ 밴드 보여 주기 → 🚶 정리운동 ${MOVE_SEC}초 → 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
+      ${helper(`수고했어요! 먼저 손목 밴드를 저에게 보여 주세요. 그다음 팔다리 털기, 어깨 돌리기, 무릎 돌리기를 10초씩 하고, 파란 공과 목소리를 따라 심호흡해 보세요.`,
+        [`친구가 보여 주는 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장] (${COOL[0].sec}초 안에)`, `${HRR_SEC/60}분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장]`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
       <div style="display:flex;align-items:center;gap:16px"><div class="timer" id="t" style="font-size:56px;margin:0">0:00</div>
         <p class="hint" style="margin:0">기준값 <b>${L.rest}bpm</b> · 회복 목표 <b>${L.rest-RANGE}~${L.rest+RANGE}bpm</b> (최대 ${RECOVER_SEC/60}분)</p></div>
       <div class="hr1box${L.peak!=null?' saved':' now'}" id="pkbox">
@@ -2642,7 +2644,7 @@ function renderStep(){
         <button class="btn btn-main" onclick="saveHr1()">저장</button>
       </div>
       <div class="cool" id="cool"><span class="cem" id="cem">${COOL[0].em}</span><div><b id="cname">${COOL[0].name}</b>
-        <div class="csteps">${COOL.map((c,j)=>`<span id="cs${j}">${c.em} ${c.name} ${c.sec}초</span>`).join(" → ")} → 🌬️ 심호흡</div></div>
+        <div class="csteps">${COOL.map((c,j)=>`<span id="cs${j}">${c.em} ${c.short||c.name} ${c.sec}초</span>`).join(" → ")} → 🌬️ 심호흡</div></div>
         <span class="ccount" id="ccount">10</span></div>
       <div class="breath" id="bg" style="display:none"><div class="ball" id="bball"></div>
         <div><div class="bph" id="bph">코로 들이마셔요</div><div class="bsec" id="bsec">4</div>
@@ -2819,7 +2821,7 @@ setInterval(()=>{
       $("#cem").textContent=COOL[j].em; $("#cname").textContent=COOL[j].name;
       COOL.forEach((_,k)=>$("#cs"+k).classList.toggle("on",k===j)); }
     bg.style.display="none";
-    if(lastCool!==j){ lastCool=j; if(j>0) say(COOL[j].name); }   // 첫 동작은 운동 끝 안내에서 말해요
+    if(lastCool!==j){ lastCool=j; if(j>0) say(COOL[j].say||COOL[j].name); }   // 첫 안내(밴드 보여 주기)는 운동 끝 안내에서 말해요
     lastPhase=-1; return; }
   lastCool=-1;
   if(cool && cool.style.display!=="none"){ cool.style.display="none"; bg.style.display="flex"; say("이제 심호흡을 시작해요"); lastPhase=-2; return; }
@@ -3080,11 +3082,11 @@ function stopMusic(){
 let exTick=null, lastCheck=0;
 /* 30초마다: 띵동 소리 + "밴드 확인" 안내 */
 function checkBand(m){
-  m.innerHTML=`<b style="color:#b45309">⌚ 밴드 확인! 잠깐 멈추고 손목을 보여 주세요</b>`;
+  m.innerHTML=`<b style="color:#b45309">⌚ 내 밴드를 보고 속도를 조절해요! (${TARGET} 목표)</b>`;
   const box=m.closest(".restbox"); if(box){ box.classList.add("check"); setTimeout(()=>box.classList.remove("check"),4000); }
   setTimeout(()=>{ if($("#etm")===m && !m.textContent.includes("달성")) m.textContent=`다시 운동! 다음 확인까지 ${CHECK_SEC}초`; },4000);
   if(music){ try{ const g=music.out.gain, n=music.ac.currentTime; g.setTargetAtTime(0.15,n,0.1); g.setTargetAtTime(0.55,n+3.5,0.3); }catch(e){} }  // 안내 동안 음악 줄이기
-  setTimeout(()=>announce("심박수를 확인하세요"),700);
+  setTimeout(()=>announce("내 심박수를 확인해 보세요"),700);
   if(padSound) try{
     const ac=music?music.ac:new (window.AudioContext||window.webkitAudioContext)(), t=ac.currentTime;
     [[988,0],[1319,0.18]].forEach(([f,d])=>{ const o=ac.createOscillator(), g=ac.createGain(); o.type="sine"; o.frequency.value=f;
@@ -3113,7 +3115,7 @@ function finishEx(){
   const L=lanes[cur];
   L.peak=null; L.hr1=null; L.after=null; L.timedOut=false; L.method="breath";
   L.start=Date.now(); L.end=null; L.step=4;
-  announce("운동 끝! 정리운동을 해요. 팔다리 털기");
+  announce("운동 끝! 손목 밴드를 도우미에게 보여 주세요");
   renderStep();
   setTimeout(()=>$("#pk")&&$("#pk").focus(),50);
 }
