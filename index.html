@@ -3318,7 +3318,15 @@ function resultHTML(L){
 function goHome(){ openLane(0); }
 if(!new URLSearchParams(location.search).has("r")) openLane(0);
 /* 테스트용: 주소 끝에 ?test=회복 을 붙이면 회복 단계(③)부터 바로 시작해요 (안정 시 심박수 85로 가정) */
-if(/^(회복|recovery|4)$/.test(new URLSearchParams(location.search).get("test")||"")) doStep(4);
+/* 브라우저는 화면을 한 번 눌러야 소리를 내 주기 때문에, 시작 버튼을 누르면 음성과 함께 시작해요 */
+if(/^(회복|recovery|4)$/.test(new URLSearchParams(location.search).get("test")||"")){
+  const ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;z-index:99;background:rgba(15,23,42,.75);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;color:#fff;font-size:20px;text-align:center;padding:16px";
+  ov.innerHTML=`<b style="font-size:28px">🧪 회복 단계 테스트</b><div>안정 시 심박수 85로 가정하고 ③ 회복 화면을 0:00부터 시작해요.<br>이 태블릿의 음악·효과음이 <b>${padSound?"켜져 있어 음성이 나와요":"꺼져 있어요. 시작 뒤 위쪽 버튼으로 켜 주세요"}</b>.</div>
+    <button class="btn btn-green" style="font-size:24px;padding:16px 28px">▶ 테스트 시작 (음성 켜기)</button>`;
+  ov.querySelector("button").onclick=()=>{ ov.remove(); doStep(4); announce("회복 단계 테스트를 시작해요. 먼저 밴드를 도우미에게 보여 주세요"); };
+  document.body.appendChild(ov);
+}
 </script>
 </body>
 </html>
