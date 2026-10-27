@@ -2885,17 +2885,18 @@ setInterval(()=>{
 /* ===== 규칙 기반 분석 ===== */
 function analyze(L){
   const t = elapsed(L);
-  // 심박 회복(HRR): 회복 2분 동안 내려간 심박수
-  //  점수는 70~100점: 22bpm 미만 → 70~79점 · 22~43bpm → 80~89점 · 44bpm 이상 → 90~100점(60bpm 이상 100점)
-  //  22bpm은 운동 연구의 2분 기준, 44bpm(그 2배)은 체험용으로 정한 값
+  // 점수 70~100점 = 심박 회복(2분 동안 내려간 심박수) 70% + 회복 목표 도달 시간 30%
+  //  ① 2분 회복: 22bpm 미만 → 70~79 · 22~43 → 80~89 · 44 이상 → 90~100 (22bpm은 운동 연구의 2분 기준, 44bpm은 체험용 값)
+  //  ② 도달 시간: 안정 시 심박수 ±5에 1분 안에 들어오면 100, 5분까지 걸리면 70 (5분 안에 못 들어오면 70)
   const hrr = Math.max(0, L.peak - (L.hr1 ?? L.after));
-  let score;
-  if(hrr < 22)      score = 70 + Math.round(9 * hrr / 22);
-  else if(hrr < 44) score = 80 + Math.round(9 * (hrr - 22) / 21);
-  else              score = 90 + Math.round(10 * Math.min(hrr - 44, 16) / 16);
-  score = Math.max(70, Math.min(100, score));
+  let hs;
+  if(hrr < 22)      hs = 70 + 9 * hrr / 22;
+  else if(hrr < 44) hs = 80 + 9 * (hrr - 22) / 21;
+  else              hs = 90 + 10 * Math.min(hrr - 44, 16) / 16;
+  const ts = L.timedOut ? 70 : 100 - 30 * Math.min(1, Math.max(0, t - 60) / (RECOVER_SEC - 60));
+  const score = Math.max(70, Math.min(100, Math.round(0.7 * hs + 0.3 * ts)));
   const band = score>=90 ? 2 : score>=80 ? 1 : 0;
-  return {t, score, band, hrr};
+  return {t, score, band, hrr, hs:Math.round(hs), ts:Math.round(ts)};
 }
 
 const BAND = [
