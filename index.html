@@ -2799,7 +2799,10 @@ function autoTick(){
       const w=$("#w"); if(w){ w.style.display="block"; w.textContent= rel>=EX_AT ? "운동이 시작됐어요! 숫자를 입력하고 [다음]을 누르면 바로 운동 화면으로 넘어가요." : "곧 시범이 시작돼요. 숫자를 입력하고 [다음]을 눌러 주세요."; }
     }
   }
-  if(L.step===4 && L.start && !L.end) cue(L,"hrr"+L.start,HR1_AT,L.start,"앉은 지 2분이 되었어요. 밴드를 도우미에게 보여 주세요");
+  if(L.step===4 && L.start && !L.end){
+    cue(L,"pre"+L.start,HR1_AT-10,L.start,"10초 뒤 2분이 돼요. 밴드를 도우미에게 보여 주고, 심박수를 저장할 준비를 하세요");
+    cue(L,"hrr"+L.start,HR1_AT,L.start,"2분이 되었어요. 지금 밴드의 심박수를 저장하세요");
+  }
 }
 function updateTimer(){
   autoTick();
