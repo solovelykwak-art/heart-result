@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>오늘의 기록판</title>
+<style>
+:root{--bg:#0f1530;--card:#1a2350;--line:#2c3770;--txt:#f4f6ff;--sub:#a9b3e0;--hot:#ff5a5f;--hot2:#ffb347;--cool:#2ed3a0;--cool2:#5ad1ff;--gold:#ffd54a;--silver:#d9e1ea;--bronze:#e0a36b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:"Pretendard","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;padding:2.2vh 3vw 1vh;gap:2vw}
+h1{margin:0;font-size:clamp(26px,4.2vw,54px);letter-spacing:-.02em}
+h1 small{display:block;font-size:.38em;color:var(--sub);font-weight:500;letter-spacing:0;margin-top:.4vh}
+.count{text-align:right;color:var(--sub);font-size:clamp(14px,1.6vw,20px)}
+.count b{display:block;color:var(--txt);font-size:2.2em;line-height:1}
+main{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:2vw;padding:1vh 3vw 2vh}
+.board{background:var(--card);border-radius:22px;padding:2.2vh 2vw;display:flex;flex-direction:column;border:2px solid var(--line)}
+.board h2{margin:0 0 .4vh;font-size:clamp(20px,2.8vw,36px)}
+.board p.d{margin:0 0 1.6vh;color:var(--sub);font-size:clamp(13px,1.4vw,18px)}
+.hot h2{color:var(--hot2)} .cool h2{color:var(--cool)}
+ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1.2vh;flex:1}
+li{display:grid;grid-template-columns:3.2em 1fr auto;align-items:center;background:rgba(255,255,255,.05);border-radius:14px;padding:1.2vh 1vw;font-size:clamp(17px,2.1vw,28px)}
+li .r{font-weight:800;text-align:center;font-size:1.15em}
+li .n{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+li .v{font-weight:800;font-variant-numeric:tabular-nums}
+li .v small{font-size:.55em;color:var(--sub);font-weight:600;margin-left:.2em}
+li:nth-child(1){font-size:clamp(22px,2.9vw,40px);background:rgba(255,213,74,.13);border:2px solid var(--gold)}
+li:nth-child(1) .r{color:var(--gold)} li:nth-child(2) .r{color:var(--silver)} li:nth-child(3) .r{color:var(--bronze)}
+.hot li .v{color:var(--hot)} .cool li .v{color:var(--cool2)}
+li.new{animation:pop 1.6s ease}
+@keyframes pop{0%{transform:scale(1.06);box-shadow:0 0 0 6px rgba(255,255,255,.35)}100%{transform:none;box-shadow:none}}
+.empty{color:var(--sub);text-align:center;margin:auto;font-size:clamp(16px,1.8vw,22px)}
+.ticker{margin:0 3vw 2vh;padding:1.4vh 2vw;border-radius:14px;background:rgba(255,255,255,.06);font-size:clamp(15px,1.8vw,24px);text-align:center;min-height:1.6em}
+#fab{position:fixed;right:2vw;bottom:2vh;border:0;border-radius:50px;padding:12px 20px;background:#3b4bb0;color:#fff;font-size:16px;font-weight:700;opacity:.55}
+#fab:hover,#fab:focus{opacity:1}
+#panel{position:fixed;inset:0;background:rgba(5,8,20,.72);display:none;align-items:center;justify-content:center;padding:16px}
+#panel.on{display:flex}
+.sheet{background:#fff;color:#1b2140;border-radius:20px;padding:22px;width:min(560px,100%);max-height:94vh;overflow:auto}
+.sheet h3{margin:0 0 4px;font-size:22px}
+.sheet .hint{margin:0 0 14px;color:#5a6390;font-size:14px}
+.row{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.row label{font-weight:700;font-size:15px}
+.row input{font-size:22px;padding:10px 12px;border:2px solid #cdd3ee;border-radius:12px;width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.btns button{flex:1;min-width:120px;font-size:17px;font-weight:700;padding:12px;border-radius:12px;border:0;cursor:pointer}
+.primary{background:#3b4bb0;color:#fff} .ghost{background:#eef0fa;color:#1b2140} .warn{background:#ffe9e9;color:#b3261e}
+#msg{min-height:1.3em;color:#b3261e;font-size:14px;margin:4px 0 0}
+#recent{margin-top:14px;border-top:1px solid #e3e6f5;padding-top:10px;font-size:14px;color:#5a6390}
+#recent div{display:flex;justify-content:space-between;align-items:center;padding:4px 0;gap:8px}
+#recent button{border:0;background:#ffe9e9;color:#b3261e;border-radius:8px;padding:4px 10px;font-size:13px;cursor:pointer}
+@media (max-width:760px){main{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header>
+  <h1>🏆 오늘의 기록판<small>두근두근 심박수를 낮춰라 · 장산초 E-11</small></h1>
+  <div class="count">오늘 참여한 친구<b id="cnt">0</b>명</div>
+</header>
+<main>
+  <section class="board hot">
+    <h2>🔥 운동 최고 심박수</h2>
+    <p class="d">2분 버피테스트 직후 가장 높이 올린 친구</p>
+    <ol id="hotList"></ol>
+  </section>
+  <section class="board cool">
+    <h2>💚 회복왕</h2>
+    <p class="d">2분 동안 심박수를 가장 많이 낮춘 친구</p>
+    <ol id="coolList"></ol>
+  </section>
+</main>
+<div class="ticker" id="ticker"></div>
+<button id="fab" onclick="openPanel()">＋ 기록 넣기</button>
+
+<div id="panel" onclick="if(event.target===this)closePanel()">
+  <div class="sheet">
+    <h3>기록 넣기</h3>
+    <p class="hint">결과 화면을 보고 적어 주세요. 이름 대신 별명이나 성+이름 첫 글자(예: 김OO)를 써요.</p>
+    <div class="row"><label for="nick">별명</label><input id="nick" maxlength="8" placeholder="예: 번개토끼"></div>
+    <div class="two">
+      <div class="row"><label for="peak">운동 직후 심박수</label><input id="peak" type="number" inputmode="numeric" placeholder="예: 158"></div>
+      <div class="row"><label for="hr2">2분 뒤 심박수</label><input id="hr2" type="number" inputmode="numeric" placeholder="예: 118"></div>
+    </div>
+    <p id="msg"></p>
+    <div class="btns">
+      <button class="primary" onclick="addRec()">기록판에 올리기</button>
+      <button class="ghost" onclick="closePanel()">닫기</button>
+    </div>
+    <div id="recent"></div>
+    <div class="btns" style="margin-top:12px"><button class="warn" onclick="resetAll()">기록 모두 지우기 (새 날 시작)</button></div>
+  </div>
+</div>
+
+<script>
+const KEY="heartBoard";
+let recs=[];try{recs=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){recs=[]}
+let lastId=null;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(recs))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const medal=i=>["🥇","🥈","🥉"][i]||(i+1);
+function rank(key){return [...recs].sort((a,b)=>b[key]-a[key]||a.id-b.id).slice(0,5)}
+function list(el,rows,key,unit){
+  el.innerHTML=rows.length?rows.map((r,i)=>`<li class="${r.id===lastId?'new':''}"><span class="r">${medal(i)}</span><span class="n">${esc(r.nick)}</span><span class="v">${key==='hrr'?'−':''}${r[key]}<small>${unit}</small></span></li>`).join("")
+    :`<div class="empty">첫 번째 주인공을 기다려요!</div>`;
+}
+function render(){
+  document.getElementById("cnt").textContent=recs.length;
+  list(document.getElementById("hotList"),rank("peak"),"peak","bpm");
+  list(document.getElementById("coolList"),rank("hrr"),"hrr","bpm");
+  const rc=[...recs].reverse().slice(0,5);
+  document.getElementById("recent").innerHTML=rc.length?"<b>최근 넣은 기록</b>"+rc.map(r=>`<div><span>${esc(r.nick)} · ${r.peak} → ${r.peak-r.hrr} (−${r.hrr})</span><button onclick="delRec(${r.id})">지우기</button></div>`).join(""):"";
+}
+function openPanel(){document.getElementById("panel").classList.add("on");document.getElementById("msg").textContent="";setTimeout(()=>document.getElementById("nick").focus(),50)}
+function closePanel(){document.getElementById("panel").classList.remove("on")}
+function addRec(){
+  const nick=document.getElementById("nick").value.trim();
+  const peak=+document.getElementById("peak").value, hr2=+document.getElementById("hr2").value;
+  const m=document.getElementById("msg");
+  if(!nick){m.textContent="별명을 적어 주세요.";return}
+  if(!(peak>=60&&peak<=230)){m.textContent="운동 직후 심박수를 확인해 주세요 (60~230).";return}
+  if(!(hr2>=40&&hr2<=230)){m.textContent="2분 뒤 심박수를 확인해 주세요 (40~230).";return}
+  if(hr2>peak){m.textContent="2분 뒤 심박수가 운동 직후보다 높아요. 숫자를 다시 봐 주세요.";return}
+  const r={id:Date.now(),nick,peak,hrr:peak-hr2};recs.push(r);lastId=r.id;save();render();
+  ["nick","peak","hr2"].forEach(i=>document.getElementById(i).value="");
+  m.textContent="";closePanel();cheer(r);
+}
+function delRec(id){const r=recs.find(x=>x.id===id);if(r&&confirm(`${r.nick} 기록을 지울까요?`)){recs=recs.filter(x=>x.id!==id);save();render()}}
+function resetAll(){if(recs.length&&confirm("기록판의 기록을 모두 지울까요? 되돌릴 수 없어요.")){recs=[];save();render()}}
+const tips=["🔥 2분 동안 쉬지 않고 버피! 150을 넘겨 봐요","💚 운동 뒤 심호흡으로 빨리 회복하는 것이 진짜 실력이에요","🫁 코로 4초 들이마시고, 4초 멈추고, 입으로 6초 내쉬어요","🏃 회복이 빠를수록 몸과 마음의 회복탄력성이 좋아요","👀 다음 기록판의 주인공은 바로 여러분!"];
+let ti=0,cheerUntil=0;
+function cheer(r){
+  const ph=rank("peak").findIndex(x=>x.id===r.id), ch=rank("hrr").findIndex(x=>x.id===r.id);
+  let t=`👏 ${r.nick} 친구 기록 등록! 최고 ${r.peak}bpm · 2분 회복 −${r.hrr}bpm`;
+  if(ph===0||ch===0)t=`🎉 새로운 1위! ${r.nick} 친구가 ${ph===0?"최고 심박수":"회복왕"} 1위에 올랐어요!`;
+  document.getElementById("ticker").textContent=t;cheerUntil=Date.now()+12000;
+}
+function tick(){if(Date.now()<cheerUntil)return;document.getElementById("ticker").textContent=tips[ti++%tips.length]}
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&document.getElementById("panel").classList.contains("on"))addRec()});
+render();tick();setInterval(tick,6000);
+</script>
+</body></html>
