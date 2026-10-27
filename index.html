@@ -48,6 +48,13 @@
   .stepbar{display:flex;gap:6px;margin:6px 0 16px}
   .stepbar i{flex:1;height:8px;border-radius:9px;background:var(--line)}
   .stepbar i.on{background:var(--blue)}
+  .stepnav{display:flex;align-items:center;gap:6px;margin:6px 0 16px}
+  .stepnav .chips{display:flex;gap:6px;flex:1}
+  .stepnav .chip{flex:1;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 4px;font-size:15px;font-weight:700;color:#7a8199;cursor:pointer;font-family:inherit}
+  .stepnav .chip.done{border-color:var(--blue);color:var(--blue)}
+  .stepnav .chip.cur{background:var(--blue);border-color:var(--blue);color:#fff}
+  .stepnav .arrow{border:0;background:var(--line);border-radius:12px;padding:9px 14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .stepnav .arrow:disabled{opacity:.35;cursor:default}
   .box{background:#fff;border-radius:22px;padding:24px;box-shadow:0 4px 14px rgba(40,70,120,.08)}
   .box h2{margin:0 0 6px;font-size:26px}
   .box .hint{color:var(--sub);margin:0 0 18px;font-size:17px;line-height:1.5}
@@ -2571,7 +2578,11 @@ function openLane(i){
 function renderStep(){
   const L = lanes[cur];
   $("#flowTitle").innerHTML = `💓 두근두근 <span style="color:var(--pink)">심박수를 낮춰라!</span>`;
-  $("#stepbar").innerHTML = [1,2,3,4,5].map(n=>`<i class="${n<=L.step?'on':''}"></i>`).join("");
+  const si=NAV.findIndex(n=>n.step===L.step);
+  $("#stepbar").className="stepnav";
+  $("#stepbar").innerHTML = `<button class="arrow" onclick="moveStep(-1)" ${si<=0?'disabled':''}>◀ 이전 단계</button><div class="chips">`
+    + NAV.map((n,j)=>`<button class="chip ${j===si?'cur':j<si?'done':''}" onclick="goStep(${n.step})">${n.label}</button>`).join("")
+    + `</div><button class="arrow" onclick="moveStep(1)" ${si>=NAV.length-1?'disabled':''}>다음 단계 ▶</button>`;
   const A = $("#stepArea");
 
   if(L.step===1){
@@ -2592,7 +2603,7 @@ function renderStep(){
   if(L.step===3){
     A.innerHTML = `<div class="box">
       <h2>② 미션1 · 심박수 UP! 🔥 (${EX_SEC/60}분)</h2>
-      ${helper(`선생님이 "시작!" 하면 ${EX_SEC/60}분 동안 쉬지 않고 버피테스트를 해요. 천천히라도 멈추지 말아 주세요. 목표는 ${TARGET}bpm이에요! "심박수를 확인하세요" 소리가 나면 잠깐 손목을 보여 주세요.`,
+      ${helper(`선생님이 "시작!" 하면 ${EX_SEC/60}분 동안 쉬지 않고 버피테스트를 해요. 천천히라도 멈추지 말아 주세요. 목표는 ${TARGET}bpm이에요! "심박수를 확인하세요" 소리가 나면 잠깐 손목을 보여 주세요.${bestLine()}`,
         [`선생님 "시작!" 신호에 [🔥 운동 시작]을 눌러요`, `${CHECK_SEC}초마다 알림이 오면 친구 밴드 숫자를 봐요 (${LIMIT} 넘으면 바로 멈추게 해요)`, `"조금만 더 힘내세요!" 응원해요`, `${EX_SEC/60}분이 끝나면 화면이 저절로 회복 단계로 넘어가요`])}
       <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안 쉬지 않고</b> 해요. 목표는 <b>${TARGET}bpm</b>! 천천히라도 내 속도로 계속해요. 힘들면 팔 동작 없이 앉았다 일어나기로 바꿔도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>
       <div class="restbox"><div class="timer" id="et">${fmt(EX_SEC)}</div>
@@ -2645,6 +2656,35 @@ function renderStep(){
   }
   if(L.step===5){ A.innerHTML = helper("이것이 오늘의 감정 조절 처방전이에요! QR코드를 찍으면 휴대폰으로 가져갈 수 있어요.",
       ["점수와 처방전을 보여 줘요", "QR을 찍게 도와줘요", "[기록 지우고 다음 친구 시작]"], true) + resultHTML(L); }
+}
+/* 오늘 이 태블릿의 최고 심박수 기록 (날짜가 바뀌면 새로 시작) */
+const today=()=>new Date().toLocaleDateString("ko-KR");
+function getBest(){ try{ const b=JSON.parse(localStorage.getItem("bestPeak")||"null"); return b&&b.day===today()?b.peak:null; }catch(e){ return null; } }
+function saveBest(v){ if(v==null) return; const b=getBest(); if(b==null||v>b){ try{ localStorage.setItem("bestPeak",JSON.stringify({day:today(),peak:v})); }catch(e){} } }
+function bestLine(){ const b=getBest(); return b==null ? " 오늘 첫 번째 기록의 주인공이 되어 보세요!" : ` 지금까지 오늘 최고 기록은 <b>${b}bpm</b>이에요. 이 기록에 도전해 볼까요?`; }
+/* 단계 이동 버튼: 테스트하거나 중간에 앞뒤로 오갈 때 써요 */
+const NAV=[{step:1,label:"① 안정"},{step:3,label:"② 운동"},{step:4,label:"③ 회복"},{step:5,label:"④ 결과"}];
+function moveStep(d){ const i=NAV.findIndex(n=>n.step===lanes[cur].step); const n=NAV[i+d]; if(n) goStep(n.step); }
+function goStep(to){
+  const L=lanes[cur]; if(to===L.step) return;
+  const miss=[];
+  if(to>=3 && L.rest==null) miss.push("안정 시 심박수");
+  if(to===5 && L.peak==null) miss.push("운동 직후 심박수");
+  if(to===5 && L.hr1==null && L.after==null) miss.push("2분 심박수");
+  if(miss.length && !confirm(`아직 비어 있는 값이 있어요: ${miss.join(", ")}\n테스트용 예시값으로 채우고 넘어갈까요?\n(실제 체험 중이면 [취소]를 눌러 주세요)`)) return;
+  clearInterval(restTick); clearInterval(exTick); stopMusic(); stopRain(); stopBowl();
+  $("#modal").classList.remove("on");
+  if(to>=3 && L.rest==null) L.rest=85;
+  if(to===4){ L.start=Date.now(); L.end=null; L.after=null; L.timedOut=false; L.method="breath"; lastCool=-1; lastPhase=-1; }
+  if(to===5){
+    if(L.peak==null) L.peak=Math.max(160, L.rest+40);
+    if(L.hr1==null) L.hr1 = L.after ?? L.peak-30;
+    if(L.after==null) L.after=L.hr1;
+    if(L.start==null) L.start=Date.now()-HRR_SEC*1000;
+    if(!L.end) L.end=Math.min(Date.now(), L.start+RECOVER_SEC*1000);
+    L.timedOut=false;
+  }
+  L.step=to; renderStep();
 }
 /* 도우미가 보는 안내: 할 말 + 할 일 */
 function helper(say, todo, compact){
@@ -2703,7 +2743,7 @@ function askAfter(timedOut){
       if(!v||v<40||v>230){ $("#w2").style.display="block"; $("#w2").textContent="40~230 사이 숫자를 입력해 주세요."; return false; }
       L.after=v;
       if(L.hr1==null) L.hr1=v;   // 2분 전에 회복했거나 2분 값을 놓친 경우
-      L.step=5; renderStep(); return true;
+      saveBest(L.peak); L.step=5; renderStep(); return true;
     }, ()=>{ if(!L.timedOut){ L.end=null; if(L.method==="mind") startBowl(); } });
   setTimeout(()=>$("#v2")&&$("#v2").focus(),50);
 }
