@@ -48,10 +48,6 @@
   .stepbar{display:flex;gap:6px;margin:6px 0 16px}
   .stepbar i{flex:1;height:8px;border-radius:9px;background:var(--line)}
   .stepbar i.on{background:var(--blue)}
-  .timer.wait{color:#94a3b8}
-  .count10{position:fixed;inset:0;flex-direction:column;align-items:center;justify-content:center;font-size:min(48vw,60vh);font-weight:900;color:var(--pink);background:rgba(255,255,255,.93);z-index:50;pointer-events:none;line-height:1}
-  .count10.extimer{font-size:min(30vw,52vh);color:#ef4444;font-variant-numeric:tabular-nums}
-  .count10 small{font-size:min(3.4vw,4.5vh);font-weight:700;color:#334155;margin-top:2vh;text-align:center;padding:0 16px}
   .stepnav{display:flex;align-items:center;gap:6px;margin:6px 0 16px}
   .stepnav .chips{display:flex;gap:6px;flex:1}
   .stepnav .chip{flex:1;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 4px;font-size:15px;font-weight:700;color:#7a8199;cursor:pointer;font-family:inherit}
@@ -2528,24 +2524,16 @@ const LIMIT = 200;          // 이 심박수 이상이면 즉시 중단 안내
 const TARGET = 150;         // 미션1 목표 심박수
 const EX_SEC = 120;         // 미션1 운동 시간(2분 고정, 쉬지 않고)
 const COOL = [               // 운동 끝 → 밴드 보여 주기 10초 → 정리운동(각 10초) → 심호흡
-  {sec:20, em:"⌚", name:"밴드를 도우미에게 보여 주세요", short:"밴드 보여 주기"},
+  {sec:10, em:"⌚", name:"밴드를 도우미에게 보여 주세요", short:"밴드 보여 주기"},
   {sec:10, em:"🙌", name:"팔다리 털기", say:"이제 정리운동을 해요. 팔다리 털기"},
   {sec:10, em:"💪", name:"어깨 돌리기"},
-  {sec:10, em:"🦵", name:"무릎 돌리기"},
-  {sec:15, em:"🪑", name:"의자에 편하게 앉아요", short:"의자에 앉기", say:"의자에 편하게 앉으세요. 이제부터 1분 동안 심박수를 최대한 낮춰 봐요. 천천히 깊게 숨 쉴수록 심장이 빨리 편안해져요. 할 수 있어요!"}];
+  {sec:10, em:"🦵", name:"무릎 돌리기"}];
 const COOL_SEC = COOL.reduce((a,c)=>a+c.sec,0);
 const MOVE_SEC = COOL_SEC - COOL[0].sec;   // 정리운동만의 시간
 const CHECK_SEC = 30;       // 운동 중 밴드 확인 알림 간격(초)
-const HRR_SEC = 60;         // 의자에 앉아 심호흡을 이만큼(1분) 한 뒤 심박수를 재요
-const SIT_AT = COOL.slice(0, COOL.findIndex(c=>c.em==="🪑")).reduce((a,c)=>a+c.sec,0);   // 운동 끝나고 의자에 앉는 시각(초)
-const HR1_AT = COOL_SEC + HRR_SEC;   // 심호흡 1분 뒤 심박수를 재는 시각 (운동 끝 기준, 약 2분)
+const HRR_SEC = 120;        // 심박 회복: 회복 시작 후 이 시간(2분)에 심박수를 재요
 const REST_SEC = 60;        // 안정 시 심박수 재기 전 쉬는 시간
-/* 자동 진행 시간표: [1분 쉬기 시작]을 함께 누른 순간부터 (초) */
-const INPUT_SEC = 30;                       // 1분 쉬기 뒤 안정 시 심박수 입력 시간
-const DEMO_AT = REST_SEC + INPUT_SEC;       // 대표 도우미 버피테스트 시범 시작
-const DEMO_SEC = 30;                        // 시범 + 일어나서 열 세기 시간
-const EX_AT = DEMO_AT + DEMO_SEC;           // 운동 자동 시작
-const RECOVER_SEC = 180;    // 미션2(회복) 제한 시간 3분
+const RECOVER_SEC = 300;    // 미션2(회복) 제한 시간 5분
 
 const METHODS = {
   breath:{em:"🌬️",name:"호흡법",desc:"4초 들이마시고, 4초 멈추고, 6초 내쉬기",
@@ -2602,8 +2590,8 @@ function renderStep(){
   if(L.step===1){
     A.innerHTML = `<div class="box">
       <h2>① 안정 시 심박수</h2>
-      ${helper("밴드 찬 손을 무릎에 올리고 편하게 앉아 주세요. 이제부터는 안내 목소리를 따라 하면 돼요.",
-        ["대표 도우미 신호에 5대 모두 함께 [⏱ 1분 쉬기 시작]을 눌러요 (함께 누르는 건 이번 한 번뿐이에요)", "1분 뒤 \"지금 스마트밴드의 심박수를 입력하세요\" 소리가 나면 친구 밴드 숫자를 입력하고 [다음]을 눌러요 (30초 안에)", "그다음은 음성 안내에 따라 운동까지 저절로 진행돼요"])}
+      ${helper("밴드 찬 손을 무릎에 올리고 편하게 앉아 주세요. 1분 동안 쉬면서 새소리를 들어 보세요.",
+        ["[⏱ 1분 쉬기 시작]을 눌러요", "1분이 끝나면 친구 손목 밴드의 숫자를 봐요", "숫자를 입력하고 [다음]을 눌러요"])}
       <p class="hint">[1분 쉬기 시작]을 누르고 편하게 앉아 쉬어요. 1분이 끝나면 입력칸이 나타나요. 그때 스마트밴드 숫자를 입력하세요. 이 숫자가 '기준값'이 돼요.</p>
       <div class="restbox"><div class="timer" id="rt">${fmt(REST_SEC)}</div>
         <button class="btn btn-green" id="rtb" onclick="startRest()">⏱ 1분 쉬기 시작</button>
@@ -2617,13 +2605,12 @@ function renderStep(){
   if(L.step===3){
     A.innerHTML = `<div class="box">
       <h2>② 미션1 · 심박수 UP! 🔥 (${EX_SEC/60}분)</h2>
-      ${helper(`제가 버피테스트를 3번 보여 줄게요. 잘 보고 따라 해 주세요!${bestLine()}`,
-        [`"시범을 잘 보세요" 소리가 나면 대표 도우미가 버피테스트 3번을 보여 줘요 (앉기 → 다리 뒤로 → 다시 모으기 → 점프)`, `"모두 일어나세요!" 뒤 "열, 아홉 … 하나, 시작!" 소리와 함께 운동이 저절로 시작돼요 (누르지 않아도 돼요)`, `${CHECK_SEC}초 알림은 친구가 스스로 밴드를 보고 속도를 조절해요 (많이 힘들어 보이면 천천히 하게 해요)`, `${EX_SEC/60}분이 끝나면 친구 밴드를 보고 운동 직후 심박수를 입력해요`])}
-      <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안 쉬지 않고</b> 해요. 목표는 <b>${TARGET}bpm</b>! 천천히라도 내 속도로 계속해요. 힘들면 팔 동작 없이 앉았다 일어나기로 바꿔도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>${getBest()!=null?`<p class="hint" style="font-size:18px">🏆 오늘 최고 기록 <b style="color:var(--pink)">${getBest()}bpm</b>에 도전해 보세요!</p>`:""}
-      <div class="count10" id="count10" style="display:none">10</div>
+      ${helper(`먼저 대표 도우미가 버피테스트 3번을 보여 줄 거예요. 잘 보고 따라 해 주세요. 대표 도우미가 "시작!"을 외치면 ${EX_SEC/60}분 동안 쉬지 않고 버피테스트를 해요. 천천히라도 멈추지 말아 주세요. 목표는 ${TARGET}bpm이에요! ${CHECK_SEC}초마다 "내 심박수를 확인해 보세요" 소리가 나면 내 밴드를 보고 힘을 조절해요. ${TARGET}이 안 되면 조금 더 빠르게, 너무 힘들면 천천히 해요. 운동이 끝나면 밴드를 도우미에게 보여 주세요.${bestLine()}`,
+        [`대표 도우미가 버피테스트 3번을 천천히 시범으로 보여 줘요 (앉기 → 다리 뒤로 → 다시 모으기 → 점프)`, `대표 도우미가 "시작!"을 외치면 도우미 5명 모두 함께 [🔥 운동 시작]을 눌러요`, `${CHECK_SEC}초마다 알림이 오면 친구가 스스로 밴드를 보고 속도를 조절해요 (도우미는 기록하지 않아도 돼요. 많이 힘들어 보이면 천천히 하게 해요)`, `"조금만 더 힘내세요!" 응원해요`, `${EX_SEC/60}분이 끝나면 화면이 저절로 넘어가요. 친구 밴드를 보고 운동 직후 심박수를 입력해요`])}
+      <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안 쉬지 않고</b> 해요. 목표는 <b>${TARGET}bpm</b>! 천천히라도 내 속도로 계속해요. 힘들면 팔 동작 없이 앉았다 일어나기로 바꿔도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>
       <div class="restbox"><div class="timer" id="et">${fmt(EX_SEC)}</div>
-        <button class="btn btn-ghost" id="etb" onclick="startEx()" style="display:${L.t0?'none':''}">🔥 지금 바로 시작</button>
-        <div class="rtmsg" id="etm">${L.t0 ? "음성 안내에 따라 운동이 저절로 시작돼요." : "[1분 쉬기 시작]을 누르지 않았다면 [🔥 지금 바로 시작]을 눌러요."}</div></div>
+        <button class="btn btn-green" id="etb" onclick="startEx()">🔥 운동 시작</button>
+        <div class="rtmsg" id="etm">대표 도우미의 "시작!"에 맞춰 5대 모두 함께 눌러요. ${EX_SEC/60}분이 끝나면 바로 심호흡으로 회복해요.</div></div>
       <div class="actions"><button class="btn btn-ghost" onclick="back()">◀ 이전</button></div></div>`;
   }
   if(L.step===2){
@@ -2639,9 +2626,9 @@ function renderStep(){
   }
   if(L.step===4){
     A.innerHTML = `<div class="box">
-      <h2>③ 미션2 · ⌚ 밴드 → 🚶 정리운동 → 🪑 앉기 → 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
-      ${helper(`수고했어요! 밴드를 보여 준 다음, 목소리를 따라 정리운동과 심호흡을 해요.`,
-        [`친구가 보여 주는 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장] (${COOL[0].sec}초 안에)`, `심호흡 1분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장] (목표 안이면 저절로 결과로 넘어가요)`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
+      <h2>③ 미션2 · ⌚ 밴드 보여 주기 → 🚶 정리운동 ${MOVE_SEC}초 → 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
+      ${helper(`수고했어요! 먼저 손목 밴드를 저에게 보여 주세요. 그다음 팔다리 털기, 어깨 돌리기, 무릎 돌리기를 10초씩 하고, 파란 공과 목소리를 따라 심호흡해 보세요.`,
+        [`친구가 보여 주는 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장] (${COOL[0].sec}초 안에)`, `${HRR_SEC/60}분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장]`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
       <div style="display:flex;align-items:center;gap:16px"><div class="timer" id="t" style="font-size:56px;margin:0">0:00</div>
         <p class="hint" style="margin:0">기준값 <b>${L.rest}bpm</b> · 회복 목표 <b>${L.rest-RANGE}~${L.rest+RANGE}bpm</b> (최대 ${RECOVER_SEC/60}분)</p></div>
       <div class="hr1box${L.peak!=null?' saved':' now'}" id="pkbox">
@@ -2651,8 +2638,8 @@ function renderStep(){
         <button class="btn btn-main" onclick="savePeakNow()">저장</button>
       </div>
       <div class="hr1box${L.hr1!=null?' saved':''}" id="h1box">
-        <b>🌬️ 심호흡 1분 뒤 심박수</b>
-        <span id="h1msg">${L.hr1!=null ? `저장했어요: ${L.hr1}bpm` : `의자에 앉아 심호흡을 1분 하면 밴드 숫자를 입력해요`}</span>
+        <b>⏱ ${HRR_SEC/60}분 심박수</b>
+        <span id="h1msg">${L.hr1!=null ? `저장했어요: ${L.hr1}bpm` : `회복 ${HRR_SEC/60}분이 되면 밴드 숫자를 입력해요`}</span>
         <input id="h1" type="number" inputmode="numeric" min="40" max="230" placeholder="0" value="${L.hr1??''}">
         <button class="btn btn-main" onclick="saveHr1()">저장</button>
       </div>
@@ -2670,14 +2657,13 @@ function renderStep(){
     updateTimer();
   }
   if(L.step===5){ A.innerHTML = helper("이것이 오늘의 감정 조절 처방전이에요! QR코드를 찍으면 휴대폰으로 가져갈 수 있어요.",
-      ["점수와 처방전을 보여 줘요", "QR을 찍게 도와줘요", "[기록 지우고 다음 친구 시작]", "🎁 머리띠와 음료를 나눠 줘요"], true) + resultHTML(L); }
+      ["점수와 처방전을 보여 줘요", "QR을 찍게 도와줘요", "[기록 지우고 다음 친구 시작]"], true) + resultHTML(L); }
 }
 /* 오늘 이 태블릿의 최고 심박수 기록 (날짜가 바뀌면 새로 시작) */
 const today=()=>new Date().toLocaleDateString("ko-KR");
 function getBest(){ try{ const b=JSON.parse(localStorage.getItem("bestPeak")||"null"); return b&&b.day===today()?b.peak:null; }catch(e){ return null; } }
 function saveBest(v){ if(v==null) return; const b=getBest(); if(b==null||v>b){ try{ localStorage.setItem("bestPeak",JSON.stringify({day:today(),peak:v})); }catch(e){} } }
-function bestSay(){ const b=getBest(); return `${EX_SEC/60}분 동안 쉬지 않고 해요. 목표는 ${TARGET}! ${TARGET}을 넘으면 최고 기록에 도전해요. ` + (b==null ? "" : `오늘 최고 기록은 ${b}이에요. `) + `${LIMIT}이 되면 바로 멈춰요.`; }
-function bestLine(){ const b=getBest(); return b==null ? "" : ` 지금까지 오늘 최고 기록은 <b>${b}bpm</b>이에요. 이 기록에 도전해 볼까요?`; }
+function bestLine(){ const b=getBest(); return b==null ? " 오늘 첫 번째 기록의 주인공이 되어 보세요!" : ` 지금까지 오늘 최고 기록은 <b>${b}bpm</b>이에요. 이 기록에 도전해 볼까요?`; }
 /* 단계 이동 버튼: 테스트하거나 중간에 앞뒤로 오갈 때 써요 */
 const NAV=[{step:1,label:"① 안정"},{step:3,label:"② 운동"},{step:4,label:"③ 회복"},{step:5,label:"④ 결과"}];
 function moveStep(d){ const i=NAV.findIndex(n=>n.step===lanes[cur].step); const n=NAV[i+d]; if(n) goStep(n.step); }
@@ -2686,7 +2672,7 @@ function goStep(to){
   const miss=[];
   if(to>=3 && L.rest==null) miss.push("안정 시 심박수");
   if(to===5 && L.peak==null) miss.push("운동 직후 심박수");
-  if(to===5 && L.hr1==null && L.after==null) miss.push("심호흡 1분 뒤 심박수");
+  if(to===5 && L.hr1==null && L.after==null) miss.push("2분 심박수");
   if(miss.length){ showModal("🧪 테스트용으로 넘어갈까요?", `아직 비어 있는 값이 있어요: <b>${miss.join(", ")}</b><br>예시값으로 채우고 다음 화면으로 넘어가요.<br><small>실제 체험 중이면 [취소]를 눌러 주세요.</small>`, ()=>{ doStep(to); }); return; }
   doStep(to);
 }
@@ -2695,8 +2681,6 @@ function doStep(to){
   clearInterval(restTick); clearInterval(exTick); stopMusic(); stopRain(); stopBowl();
   $("#modal").classList.remove("on");
   if(to>=3 && L.rest==null) L.rest=85;
-  if(to===1){ L.t0=null; L.exStart=null; }
-  if(to===3) L.exStart=null;
   if(to===4){ L.start=Date.now(); L.end=null; L.after=null; L.timedOut=false; L.method="breath"; lastCool=-1; lastPhase=-1; }
   if(to===5){
     if(L.peak==null) L.peak=Math.max(160, L.rest+40);
@@ -2709,9 +2693,10 @@ function doStep(to){
   L.step=to; renderStep();
 }
 /* 도우미가 보는 안내: 할 말 + 할 일 */
-function helper(say, todo, compact){   // 할 말(say)은 음성 안내가 대신해요. 화면에는 도우미 할 일만 보여요
-  if(compact) return `<div class="helper compact"><div class="hsay">📋 <b>도우미가 할 일</b> ${todo.map((t,i)=>`${"①②③④"[i]} ${t}`).join(" &nbsp; ")}</div></div>`;
-  return `<div class="helper"><div class="hsay">📋 <b>도우미가 할 일</b> <span style="font-size:15px">말은 음성 안내가 해 줘요. 숫자 입력만 챙겨 주세요.</span></div>
+function helper(say, todo, compact){
+  if(compact) return `<div class="helper compact"><div class="hsay">🙋 <b>도우미가 말해요</b> “${say}”</div>
+    <div class="htodo1">${todo.map((t,i)=>`${"①②③④"[i]} ${t}`).join(" &nbsp; ")}</div></div>`;
+  return `<div class="helper"><div class="hsay">🙋 <b>도우미가 말해요</b> “${say}”</div>
     <ol class="htodo">${todo.map(t=>`<li>${t}</li>`).join("")}</ol></div>`;
 }
 function numInput(id,val){
@@ -2722,7 +2707,7 @@ function readNum(){
   if(!v || v<40 || v>230){ w.style.display="block"; w.textContent="40~230 사이 숫자를 입력해 주세요."; return null; }
   return v;
 }
-function back(){ clearInterval(exTick); stopMusic(); const L=lanes[cur]; L.step = L.step===3 ? 1 : L.step-1; if(L.step===1){ L.t0=null; L.exStart=null; } renderStep(); }
+function back(){ clearInterval(exTick); stopMusic(); const L=lanes[cur]; L.step = L.step===3 ? 1 : L.step-1; renderStep(); }
 function saveRest(){ const v=readNum(); if(v==null) return; clearInterval(restTick); stopRain(); lanes[cur].rest=v; lanes[cur].method="breath"; lanes[cur].step=3; renderStep(); }
 function savePeak(){
   const v=readNum(); if(v==null) return;
@@ -2741,14 +2726,7 @@ function saveHr1(){
   const L=lanes[cur], v=Math.round(+$("#h1").value), m=$("#h1msg");
   if(!v||v<40||v>230){ m.textContent="40~230 사이 숫자를 입력해 주세요."; return; }
   L.hr1=v; $("#h1box").classList.remove("now"); $("#h1box").classList.add("saved");
-  m.textContent = L.peak!=null ? `저장했어요: ${v}bpm (운동 직후보다 ${L.peak-v}bpm 내려감)` : `저장했어요: ${v}bpm`;
-  // 심호흡 1분 뒤 심박수가 회복 목표(안정 시 +${RANGE} 이하) 안이면 회복 완료까지 자동으로 해요
-  if(L.peak!=null && v<=L.rest+RANGE && !L.end){
-    stopBowl(); L.end=Date.now(); L.timedOut=elapsed(L)>RECOVER_SEC; L.after=v;
-    saveBest(L.peak); L.step=5; renderStep();   // 음성 없이 이 태블릿만 조용히 결과로 넘어가요
-  } else if(L.peak!=null && !L.end){
-    m.innerHTML += `<br><b>🌬️ 아직 회복 목표(${L.rest-RANGE}~${L.rest+RANGE}) 전이에요. 들어올 때까지 심호흡을 이어서 해요!</b>`;
-  }
+  m.textContent = L.peak!=null ? `저장했어요: ${v}bpm (${HRR_SEC/60}분 동안 ${L.peak-v}bpm 내려감)` : `저장했어요: ${v}bpm`;
 }
 
 /* 회복 완료 / 시간 종료: 회복 후 심박수 입력 */
@@ -2757,12 +2735,12 @@ function askAfter(timedOut){
   if(L.peak==null){
     $("#pkbox").classList.add("now"); $("#pkmsg").textContent="먼저 운동 직후 심박수를 입력하고 [저장]을 눌러 주세요."; return;
   }
-  if(!timedOut && L.hr1==null && elapsed(L)>=HR1_AT){
-    $("#h1box").classList.add("now"); $("#h1msg").textContent=`먼저 심호흡 1분 뒤 심박수를 입력하고 [저장]을 눌러 주세요.`; return;
+  if(!timedOut && L.hr1==null && elapsed(L)>=HRR_SEC){
+    $("#h1box").classList.add("now"); $("#h1msg").textContent=`먼저 ${HRR_SEC/60}분 심박수를 입력하고 [저장]을 눌러 주세요.`; return;
   }
   stopBowl();
   if(!L.end) L.end = Date.now();
-  L.timedOut = timedOut || elapsed(L) >= RECOVER_SEC;
+  L.timedOut = timedOut || elapsed(L) > RECOVER_SEC;
   if(L.timedOut) L.end = L.start + RECOVER_SEC*1000;
   showModal(L.timedOut ? `⏰ ${RECOVER_SEC/60}분이 지났어요` : "✅ 회복 완료!",
     `${fmt(elapsed(L))} 걸렸어요. 지금 스마트밴드에 나온 심박수를 입력해 주세요.<br><br>${numInput("v2","")}<div class="warn" id="w2"></div>`,
@@ -2776,43 +2754,7 @@ function askAfter(timedOut){
   setTimeout(()=>$("#v2")&&$("#v2").focus(),50);
 }
 
-/* 자동 진행: 함께 누른 시각(t0)을 기준으로 음성 안내와 운동 시작을 맞춰요 */
-const COUNT_KO=["열","아홉","여덟","일곱","여섯","다섯","넷","셋","둘","하나"];
-function cue(L,key,atSec,base,text){
-  const rel=(Date.now()-base)/1000;
-  if(!L.cues) L.cues={};
-  if(rel>=atSec && !L.cues[key]){ L.cues[key]=1; if(rel<atSec+4) announce(text); }
-}
-function sharedGuide(L){ return L.start && (L.step===4 || L.step===5) && (Date.now()-L.start)/1000 < RECOVER_SEC+5; }
-function autoTick(){
-  const L=lanes[cur]; if(!$("#flow").classList.contains("on")) return;
-  if(L.t0 && (L.step===1 || L.step===3) && !L.exStart){
-    const rel=(Date.now()-L.t0)/1000;
-    cue(L,"restEnd",REST_SEC,L.t0,"1분 끝! 지금 스마트밴드의 심박수를 입력하세요");
-    cue(L,"demo",DEMO_AT,L.t0,"이제 버피테스트를 배워요. 대표 도우미의 시범을 잘 보세요");
-    cue(L,"rule",EX_AT-24,L.t0,bestSay());
-    cue(L,"stand",EX_AT-12,L.t0,"모두 일어나세요!");
-    COUNT_KO.forEach((w,k)=>cue(L,"n"+k,EX_AT-10+k,L.t0,w));   // 열, 아홉, … 하나
-    if(rel>=EX_AT) cue(L,"go",EX_AT,L.t0,"시작!");
-    if(L.step===3){
-      const t=$("#et"), m=$("#etm");
-      if(rel>=EX_AT){ startEx(L.t0+EX_AT*1000); return; }
-      const big=$("#count10"); if(big){ const n=Math.ceil(EX_AT-rel); big.style.display = n<=10 ? "flex" : "none"; big.textContent=n; }
-      if(t){ t.classList.add("wait"); t.textContent=fmt(Math.ceil(EX_AT-rel)); }
-      if(m) m.innerHTML = rel<DEMO_AT ? `⏳ 친구들이 입력을 마치면 시범이 시작돼요` : rel<EX_AT-5 ? `<b>👀 대표 도우미의 버피테스트 시범을 봐요</b> · 운동 시작까지` : rel<EX_AT-12 ? `<b>📣 운동 규칙을 들어요</b>` : `<b style="color:var(--red)">🔥 모두 일어나세요! 열을 세면 시작해요</b>`;
-    }
-    if(L.step===1 && rel>=DEMO_AT && L.rest==null){
-      const w=$("#w"); if(w){ w.style.display="block"; w.textContent= rel>=EX_AT ? "운동이 시작됐어요! 숫자를 입력하고 [다음]을 누르면 바로 운동 화면으로 넘어가요." : "곧 시범이 시작돼요. 숫자를 입력하고 [다음]을 눌러 주세요."; }
-    }
-  }
-  if(sharedGuide(L)){   // 대표(소리) 태블릿은 자기 친구가 먼저 끝나도 다른 친구들을 위해 안내를 이어 가요
-    cue(L,"end"+L.start,RECOVER_SEC,L.start,"회복 시간이 끝났어요. 밴드를 도우미에게 보여 주세요");
-    cue(L,"pre"+L.start,HR1_AT-10,L.start,"10초 뒤에 심박수를 저장해요. 밴드를 도우미에게 보여 주세요");
-    cue(L,"hrr"+L.start,HR1_AT,L.start,"지금 밴드의 심박수를 저장하세요. 아직 목표 전이면 심호흡을 이어서 해요");
-  }
-}
 function updateTimer(){
-  autoTick();
   lanes.forEach((L,i)=>{
     if(L.step===4 && !L.end && elapsed(L)>=RECOVER_SEC){
       L.end = L.start + RECOVER_SEC*1000;
@@ -2822,8 +2764,8 @@ function updateTimer(){
   const L=lanes[cur], t=$("#t");
   if(t && L.step===4){ t.textContent = fmt(elapsed(L)); t.classList.toggle("over", elapsed(L)>RECOVER_SEC-30); }
   const hb=$("#h1box");
-  if(hb && L.step===4 && L.hr1==null && elapsed(L)>=HR1_AT && !hb.classList.contains("now")){
-    hb.classList.add("now"); $("#h1msg").textContent=`⏰ 심호흡 1분! 지금 밴드 숫자를 입력하고 [저장]을 눌러요.`;
+  if(hb && L.step===4 && L.hr1==null && elapsed(L)>=HRR_SEC && !hb.classList.contains("now")){
+    hb.classList.add("now"); $("#h1msg").textContent=`⏰ ${HRR_SEC/60}분! 지금 밴드 숫자를 입력하고 [저장]을 눌러요.`;
   }
   
 }
@@ -2846,20 +2788,18 @@ function togglePadSound(){
   showPadSound();
 }
 setTimeout(showPadSound,0);
-let annUntil=0;
 function announce(t){   // 운동 중 안내 음성 (패드 소리 설정을 따름)
   try{
     if(!padSound || !window.speechSynthesis) return;
-    speechSynthesis.cancel(); annUntil=Date.now()+Math.max(3000, t.length*200);   // 안내 말이 끝날 때까지 호흡 음성은 쉬어요
+    speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(t); u.lang="ko-KR"; u.rate=0.95;
-    u.onend=()=>{ annUntil=Date.now()+400; lastPhase=-1; };   // 말이 끝나면 호흡 안내를 다시 이어요
     const ko=speechSynthesis.getVoices().find(v=>/ko/i.test(v.lang)); if(ko) u.voice=ko;
     speechSynthesis.speak(u);
   }catch(e){}
 }
 function say(t){
   try{
-    if(!voiceOn || !padSound || !window.speechSynthesis || Date.now()<annUntil) return;   // 소리 끈 패드는 호흡 음성도 꺼요
+    if(!voiceOn || !padSound || !window.speechSynthesis) return;   // 소리 끈 패드는 호흡 음성도 꺼요
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(t); u.lang = "ko-KR"; u.rate = 0.9; u.pitch = 1.05;
     const ko = speechSynthesis.getVoices().find(v => /ko/i.test(v.lang)); if(ko) u.voice = ko;
@@ -2873,18 +2813,6 @@ function toggleVoice(){
 }
 setInterval(()=>{
   const bg=$("#bg"), L=lanes[cur];
-  if(!bg && L && L.step===5 && padSound && sharedGuide(L)){   // 결과 화면에서도 소리 태블릿은 정리운동·호흡 음성을 이어 가요
-    const el=(Date.now()-L.start)/1000;
-    if(el < COOL_SEC){ let r=el, j=0; while(r>=COOL[j].sec){ r-=COOL[j].sec; j++; }
-      if(lastCool!==j){ lastCool=j; if(j>0) say(COOL[j].say||COOL[j].name); } lastPhase=-1; return; }
-    if(el >= RECOVER_SEC) return;
-    if(lastCool!==-1){ lastCool=-1; say("이제 심호흡을 시작해요"); lastPhase=-2; return; }
-    if(lastPhase===-2 && el < COOL_SEC+1.6) return;
-    let s=(el-COOL_SEC) % BREATH.reduce((a,b)=>a+b.sec,0), i=0;
-    while(s>=BREATH[i].sec){ s-=BREATH[i].sec; i++; }
-    if(i!==lastPhase){ lastPhase=i; say(BREATH[i].say); }
-    return;
-  }
   if(!bg || !L || !L.start){ if(lastPhase!==-1){ lastPhase=-1; try{ speechSynthesis.cancel(); }catch(e){} } return; }
   const el=((L.end ?? Date.now())-L.start)/1000, cool=$("#cool");
   if(el < COOL_SEC){
@@ -2912,27 +2840,26 @@ setInterval(()=>{
 /* ===== 규칙 기반 분석 ===== */
 function analyze(L){
   const t = elapsed(L);
-  // 점수 70~100점 = 심박 회복(운동 직후 → 심호흡 1분 뒤, 운동 끝 약 2분) 70% + 회복 목표 도달 시간 30%
-  //  ① 심박 회복: 22bpm 미만 → 70~79 · 22~43 → 80~89 · 44 이상 → 90~100 (22bpm은 운동 연구의 2분 기준, 44bpm은 체험용 값)
-  //  ② 도달 시간: 심호흡 1분 재기 때 안정 시 심박수 ±5 안이면 100, 운동 끝 3분까지 걸리면 70
+  // 심박 회복(HRR): 회복 2분 동안 내려간 심박수
+  //  점수는 70~100점: 22bpm 미만 → 70~79점 · 22~43bpm → 80~89점 · 44bpm 이상 → 90~100점(60bpm 이상 100점)
+  //  22bpm은 운동 연구의 2분 기준, 44bpm(그 2배)은 체험용으로 정한 값
   const hrr = Math.max(0, L.peak - (L.hr1 ?? L.after));
-  let hs;
-  if(hrr < 22)      hs = 70 + 9 * hrr / 22;
-  else if(hrr < 44) hs = 80 + 9 * (hrr - 22) / 21;
-  else              hs = 90 + 10 * Math.min(hrr - 44, 16) / 16;
-  const ts = L.timedOut ? 70 : 100 - 30 * Math.min(1, Math.max(0, t - HR1_AT) / (RECOVER_SEC - HR1_AT));
-  const score = Math.max(70, Math.min(100, Math.round(0.7 * hs + 0.3 * ts)));
+  let score;
+  if(hrr < 22)      score = 70 + Math.round(9 * hrr / 22);
+  else if(hrr < 44) score = 80 + Math.round(9 * (hrr - 22) / 21);
+  else              score = 90 + Math.round(10 * Math.min(hrr - 44, 16) / 16);
+  score = Math.max(70, Math.min(100, score));
   const band = score>=90 ? 2 : score>=80 ? 1 : 0;
-  return {t, score, band, hrr, hs:Math.round(hs), ts:Math.round(ts)};
+  return {t, score, band, hrr};
 }
 
 const BAND = [
   {name:"자라나는 중", face:"🌱", title:"회복탄력 능력이 자라나는 중이에요!",
    text:"오늘은 심박수가 천천히 돌아왔어요. 괜찮아요! 몸도 마음도 연습할수록 더 빨리 안정을 찾을 수 있어요.",
-   strengths:["오늘 끝까지 도전한 끈기가 있어요.","내 몸의 변화를 알아차리기 시작했어요.","심호흡으로 마음을 가라앉히는 법을 배웠어요."]},
+   strengths:["오늘 끝까지 도전한 끈기가 있어요.","내 몸의 변화를 알아차리기 시작했어요.","나에게 맞는 회복법을 찾아가는 중이에요."]},
   {name:"차근차근 성장 중", face:"🙂", title:"회복탄력 능력이 차근차근 자라고 있어요!",
    text:"스트레스 상황에서도 점점 안정을 찾을 수 있어요. 지금처럼 꾸준히 실천하면 더 강한 마음을 만들 수 있어요!",
-   strengths:["힘든 운동 뒤에도 스스로 안정을 찾았어요.","심호흡으로 마음을 차분하게 다스렸어요.","조금씩 더 빨리 회복하는 힘이 자라고 있어요."]},
+   strengths:["힘든 운동 뒤에도 스스로 안정을 찾았어요.","내게 맞는 회복법을 잘 골랐어요.","조금씩 더 빨리 회복하는 힘이 자라고 있어요."]},
   {name:"우수한 편", face:"😄", title:"회복탄력 능력이 우수한 편이에요!",
    text:"스트레스 상황에서도 빠르게 안정되는 힘이 좋아요. 지금처럼 꾸준히 실천하면 더 강한 마음을 만들 수 있어요!",
    strengths:["스트레스 상황에서 감정을 잘 조절해요.","마음이 흔들려도 빠르게 회복하는 힘이 있어요.","긍정적인 생각과 행동으로 다시 일어설 수 있어요."]}
@@ -2943,9 +2870,9 @@ const EMO_TIPS = {
   mind:["속상할 때 들리는 소리 3가지 세어 보기","부정적인 생각을 긍정적인 말로 바꿔 보기","내 감정 알아차리기 (감정 일기 한 줄)"]
 };
 const HABIT_TIPS = [
-  ["매일 10분 줄넘기나 걷기로 몸 깨우기","밤에 일찍 자서 충분히 쉬기","4-4-6 심호흡을 하루 1번 연습하기"],
-  ["매일 규칙적으로 수면하기","가벼운 운동 습관 만들기 (줄넘기·걷기)","4-4-6 심호흡을 꾸준히 연습하기"],
-  ["지금의 운동 습관 꾸준히 이어가기","심호흡 말고 다른 회복법도 익혀 보기","친구에게 오늘 배운 심호흡 알려 주기"]
+  ["매일 10분 줄넘기나 걷기로 몸 깨우기","밤에 일찍 자서 충분히 쉬기","오늘 고른 회복법을 하루 1번 연습하기"],
+  ["매일 규칙적으로 수면하기","가벼운 운동 습관 만들기 (줄넘기·걷기)","오늘 고른 회복법을 꾸준히 연습하기"],
+  ["지금의 운동 습관 꾸준히 이어가기","다른 회복법도 하나 더 익혀 보기","친구에게 오늘 배운 회복법 알려 주기"]
 ];
 const GROWTH = [
   "오늘 끝까지 해낸 나, 정말 멋져요! 연습할수록 몸과 마음은 더 튼튼해질 거예요.",
@@ -2985,7 +2912,7 @@ function resultHTML(L){
             <div class="v" style="background:#9be2b9">${L.after}</div><div class="q">다시 안정을 찾기까지<br>얼마나 걸렸나요?</div></div>
         </div>
         <div class="rtime"><span>💡 이 데이터는 내 감정 상태와 스트레스 정도를 알아보는 신호예요.</span>
-          <span style="white-space:nowrap">⏱ ${L.timedOut?`${RECOVER_SEC/60}분간 회복한 심박수`:"회복 소요시간"} <b>${timeTxt}</b></span></div>
+          <span style="white-space:nowrap">⏱ 회복 소요시간 <b>${timeTxt}</b></span></div>
       </div>
       <div class="card c-blue"><h3>🛡️ 나의 회복탄력 능력 결과</h3>
         <div class="score">
@@ -3046,9 +2973,7 @@ function showModal(title, html, onOk, onCancel){
 }
 function closeModal(){ $("#modal").classList.remove("on"); if(mCancel) mCancel(); }
 function askReset(i){
-  const guiding = padSound && sharedGuide(lanes[i]);   // 소리 태블릿이 아직 다른 친구들 회복 안내 중인지
-  showModal("기록을 지울까요?", `${i+1}번 체험자의 심박수 기록을 모두 지워요. 지운 기록은 되돌릴 수 없어요.`
-    + (guiding ? `<br><b style="color:#dc2626">⚠️ 이 태블릿은 음성 안내를 맡고 있어요. 지금 지우면 다른 친구들의 호흡·저장 안내가 멈춰요. 회복 시간(${RECOVER_SEC/60}분)이 끝난 뒤에 지워 주세요.</b>` : ""),
+  showModal("기록을 지울까요?", `${i+1}번 체험자의 심박수 기록을 모두 지워요. 지운 기록은 되돌릴 수 없어요.`,
     ()=>{ clearInterval(restTick); clearInterval(exTick); stopMusic(); stopRain(); stopBowl(); lanes[i]=blank(); goHome(); });
 }
 function askResetAll(){
@@ -3081,7 +3006,6 @@ function picResult(L){
     ${pill(80,176,"#168bfd",L.rest)}
     ${pill(327,182,"#fd476f",L.peak)}
     ${pill(567,184,"#30bd57",L.after)}
-    ${L.timedOut?`<div class="ov" style="${at(594,652,140,32)};background:#fdedf3;color:#1e3a8a;font-weight:800;${fs(26)};white-space:nowrap">회복한 심박수</div>`:""}
     <div class="ov" style="${at(598,688,134,40)};background:#fdedf3;color:#1a2a6e;${fs(30)}">${timeTxt}</div>
     <div class="ov" style="${at(134,650,400,70)};background:#ffebf4;color:#1f2a5c;font-weight:600;${fs(21)};line-height:1.45;justify-content:flex-start;text-align:left;white-space:nowrap">힘든 활동 뒤 다시 안정을 찾는 힘,<br>회복탄력성을 보여 주는 신호예요.</div>
     ${[[120,290,"#fdfdff",RX[band].emo],[500,247,"#fdfffb",RX[band].res]].map(([x,w,bg,list])=>
@@ -3100,8 +3024,6 @@ function picResult(L){
 let restTick=null;
 function startRest(){
   clearInterval(restTick);
-  const L0=lanes[cur]; L0.t0=Date.now(); L0.exStart=null; L0.cues={};
-  announce("밴드 찬 손을 무릎에 올리고, 1분 동안 편하게 쉬어요");
   const end=Date.now()+REST_SEC*1000, b=$("#rtb"), m=$("#rtm"), t=$("#rt");
   b.textContent="⏱ 다시 시작"; m.textContent="🐦 새소리를 들으며 편하게 숨을 골라요…";
   stopRain(); startRain();
@@ -3156,16 +3078,15 @@ function stopMusic(){
   try{ m.out.gain.setTargetAtTime(0,m.ac.currentTime,0.15); setTimeout(()=>m.ac.close(),800); }catch(e){}
 }
 
-/* ===== 미션1: 운동 타이머 (2분, 쉬지 않고) ===== */
+/* ===== 미션1: 운동 타이머 (0:00부터 최대 5분) ===== */
 let exTick=null, lastCheck=0;
 /* 30초마다: 띵동 소리 + "밴드 확인" 안내 */
-const CHECK_SAY=[`내 심박수를 확인해 보세요. 목표는 ${TARGET}!`, `${TARGET}을 넘었다면 최고 기록에 도전해요!`, `${LIMIT}이 되면 바로 멈춰요!`];
 function checkBand(m){
   m.innerHTML=`<b style="color:#b45309">⌚ 내 밴드를 보고 속도를 조절해요! (${TARGET} 목표)</b>`;
   const box=m.closest(".restbox"); if(box){ box.classList.add("check"); setTimeout(()=>box.classList.remove("check"),4000); }
   setTimeout(()=>{ if($("#etm")===m && !m.textContent.includes("달성")) m.textContent=`다시 운동! 다음 확인까지 ${CHECK_SEC}초`; },4000);
   if(music){ try{ const g=music.out.gain, n=music.ac.currentTime; g.setTargetAtTime(0.15,n,0.1); g.setTargetAtTime(0.55,n+3.5,0.3); }catch(e){} }  // 안내 동안 음악 줄이기
-  setTimeout(()=>announce(CHECK_SAY[(lastCheck-1)%CHECK_SAY.length]),700);
+  setTimeout(()=>announce("내 심박수를 확인해 보세요"),700);
   if(padSound) try{
     const ac=music?music.ac:new (window.AudioContext||window.webkitAudioContext)(), t=ac.currentTime;
     [[988,0],[1319,0.18]].forEach(([f,d])=>{ const o=ac.createOscillator(), g=ac.createGain(); o.type="sine"; o.frequency.value=f;
@@ -3173,18 +3094,15 @@ function checkBand(m){
       o.connect(g); g.connect(ac.destination); o.start(t+d); o.stop(t+d+0.55); });
   }catch(e){}
 }
-function startEx(at){
+function startEx(){
   clearInterval(exTick);
-  const L0=lanes[cur], st=at||Date.now(), b=$("#etb"), m=$("#etm"), t=$("#et");
-  L0.exStart=st; lastCheck=Math.floor(Math.max(0,(Date.now()-st)/1000)/CHECK_SEC); t.classList.remove("wait"); b.style.display="none";
+  const st=Date.now(), b=$("#etb"), m=$("#etm"), t=$("#et"); lastCheck=0;
   t.classList.remove("done"); b.textContent="🔥 다시 시작"; startMusic();
   m.textContent=`버피테스트! 목표 ${TARGET}bpm, 힘내세요!`;
   exTick=setInterval(()=>{
     if(!$("#et")){ clearInterval(exTick); stopMusic(); return; }
     const s=Math.min(EX_SEC,(Date.now()-st)/1000);
     t.textContent=fmt(Math.ceil(EX_SEC-s));
-    const big=$("#count10"); if(big){ big.style.display="flex"; big.classList.add("extimer");   // 카운트다운 자리에 같은 크기로 운동 타이머
-      big.innerHTML=`<div>${fmt(Math.ceil(EX_SEC-s))}</div><small>${m.innerHTML}</small>`; }
     const c=Math.floor(s/CHECK_SEC);
     if(c>lastCheck && s<EX_SEC){ lastCheck=c; checkBand(m); }
     if(s>=EX_SEC){ clearInterval(exTick); stopMusic(); finishEx(); }
@@ -3196,7 +3114,7 @@ function startEx(at){
 function finishEx(){
   const L=lanes[cur];
   L.peak=null; L.hr1=null; L.after=null; L.timedOut=false; L.method="breath";
-  L.start=L.exStart ? Math.min(Date.now(), L.exStart+EX_SEC*1000) : Date.now(); L.end=null; L.step=4;
+  L.start=Date.now(); L.end=null; L.step=4;
   announce("운동 끝! 손목 밴드를 도우미에게 보여 주세요");
   renderStep();
   setTimeout(()=>$("#pk")&&$("#pk").focus(),50);
@@ -3319,16 +3237,6 @@ function resultHTML(L){
 /* 1인용: 첫 화면 없이 바로 시작, 지우면 처음 단계로 */
 function goHome(){ openLane(0); }
 if(!new URLSearchParams(location.search).has("r")) openLane(0);
-/* 테스트용: 주소 끝에 ?test=회복 을 붙이면 회복 단계(③)부터 바로 시작해요 (안정 시 심박수 85로 가정) */
-/* 브라우저는 화면을 한 번 눌러야 소리를 내 주기 때문에, 시작 버튼을 누르면 음성과 함께 시작해요 */
-if(/^(회복|recovery|4)$/.test(new URLSearchParams(location.search).get("test")||"")){
-  const ov=document.createElement("div");
-  ov.style.cssText="position:fixed;inset:0;z-index:99;background:rgba(15,23,42,.75);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;color:#fff;font-size:20px;text-align:center;padding:16px";
-  ov.innerHTML=`<b style="font-size:28px">🧪 회복 단계 테스트</b><div>안정 시 심박수 85로 가정하고 ③ 회복 화면을 0:00부터 시작해요.<br>이 태블릿의 음악·효과음이 <b>${padSound?"켜져 있어 음성이 나와요":"꺼져 있어요. 시작 뒤 위쪽 버튼으로 켜 주세요"}</b>.</div>
-    <button class="btn btn-green" style="font-size:24px;padding:16px 28px">▶ 테스트 시작 (음성 켜기)</button>`;
-  ov.querySelector("button").onclick=()=>{ ov.remove(); doStep(4); announce("회복 단계 테스트를 시작해요. 먼저 밴드를 도우미에게 보여 주세요"); };
-  document.body.appendChild(ov);
-}
 </script>
 </body>
 </html>
