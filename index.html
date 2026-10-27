@@ -49,6 +49,7 @@
   .stepbar i{flex:1;height:8px;border-radius:9px;background:var(--line)}
   .stepbar i.on{background:var(--blue)}
   .timer.wait{color:#94a3b8}
+  .count10{position:fixed;inset:0;align-items:center;justify-content:center;font-size:min(48vw,60vh);font-weight:900;color:var(--pink);background:rgba(255,255,255,.82);z-index:50;pointer-events:none}
   .stepnav{display:flex;align-items:center;gap:6px;margin:6px 0 16px}
   .stepnav .chips{display:flex;gap:6px;flex:1}
   .stepnav .chip{flex:1;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 4px;font-size:15px;font-weight:700;color:#7a8199;cursor:pointer;font-family:inherit}
@@ -2528,7 +2529,8 @@ const COOL = [               // 운동 끝 → 밴드 보여 주기 10초 → �
   {sec:10, em:"⌚", name:"밴드를 도우미에게 보여 주세요", short:"밴드 보여 주기"},
   {sec:10, em:"🙌", name:"팔다리 털기", say:"이제 정리운동을 해요. 팔다리 털기"},
   {sec:10, em:"💪", name:"어깨 돌리기"},
-  {sec:10, em:"🦵", name:"무릎 돌리기"}];
+  {sec:10, em:"🦵", name:"무릎 돌리기"},
+  {sec:10, em:"🪑", name:"의자에 편하게 앉아요", short:"의자에 앉기", say:"정리운동 끝! 의자에 편하게 앉으세요"}];
 const COOL_SEC = COOL.reduce((a,c)=>a+c.sec,0);
 const MOVE_SEC = COOL_SEC - COOL[0].sec;   // 정리운동만의 시간
 const CHECK_SEC = 30;       // 운동 중 밴드 확인 알림 간격(초)
@@ -2537,7 +2539,7 @@ const REST_SEC = 60;        // 안정 시 심박수 재기 전 쉬는 시간
 /* 자동 진행 시간표: [1분 쉬기 시작]을 함께 누른 순간부터 (초) */
 const INPUT_SEC = 30;                       // 1분 쉬기 뒤 안정 시 심박수 입력 시간
 const DEMO_AT = REST_SEC + INPUT_SEC;       // 대표 도우미 버피테스트 시범 시작
-const DEMO_SEC = 20;                        // 시범 시간
+const DEMO_SEC = 25;                        // 시범 + 일어나서 열 세기 시간
 const EX_AT = DEMO_AT + DEMO_SEC;           // 운동 자동 시작
 const RECOVER_SEC = 300;    // 미션2(회복) 제한 시간 5분
 
@@ -2614,6 +2616,7 @@ function renderStep(){
       ${helper(`제가 버피테스트를 3번 보여 줄게요. 잘 보고 따라 해 주세요!${bestLine()}`,
         [`"시범을 잘 보세요" 소리가 나면 대표 도우미가 버피테스트 3번을 보여 줘요 (앉기 → 다리 뒤로 → 다시 모으기 → 점프)`, `"셋, 둘, 하나, 시작!" 소리와 함께 운동이 저절로 시작돼요 (누르지 않아도 돼요)`, `${CHECK_SEC}초 알림은 친구가 스스로 밴드를 보고 속도를 조절해요 (많이 힘들어 보이면 천천히 하게 해요)`, `${EX_SEC/60}분이 끝나면 친구 밴드를 보고 운동 직후 심박수를 입력해요`])}
       <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안 쉬지 않고</b> 해요. 목표는 <b>${TARGET}bpm</b>! 천천히라도 내 속도로 계속해요. 힘들면 팔 동작 없이 앉았다 일어나기로 바꿔도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>${getBest()!=null?`<p class="hint" style="font-size:18px">🏆 오늘 최고 기록 <b style="color:var(--pink)">${getBest()}bpm</b>에 도전해 보세요!</p>`:""}
+      <div class="count10" id="count10" style="display:none">10</div>
       <div class="restbox"><div class="timer" id="et">${fmt(EX_SEC)}</div>
         <button class="btn btn-ghost" id="etb" onclick="startEx()" style="display:${L.t0?'none':''}">🔥 지금 바로 시작</button>
         <div class="rtmsg" id="etm">${L.t0 ? "음성 안내에 따라 운동이 저절로 시작돼요." : "[1분 쉬기 시작]을 누르지 않았다면 [🔥 지금 바로 시작]을 눌러요."}</div></div>
@@ -2632,7 +2635,7 @@ function renderStep(){
   }
   if(L.step===4){
     A.innerHTML = `<div class="box">
-      <h2>③ 미션2 · ⌚ 밴드 보여 주기 → 🚶 정리운동 ${MOVE_SEC}초 → 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
+      <h2>③ 미션2 · ⌚ 밴드 → 🚶 정리운동 → 🪑 앉기 → 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
       ${helper(`수고했어요! 밴드를 보여 준 다음, 목소리를 따라 정리운동과 심호흡을 해요.`,
         [`친구가 보여 주는 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장] (${COOL[0].sec}초 안에)`, `${HRR_SEC/60}분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장]`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
       <div style="display:flex;align-items:center;gap:16px"><div class="timer" id="t" style="font-size:56px;margin:0">0:00</div>
@@ -2669,8 +2672,8 @@ function renderStep(){
 const today=()=>new Date().toLocaleDateString("ko-KR");
 function getBest(){ try{ const b=JSON.parse(localStorage.getItem("bestPeak")||"null"); return b&&b.day===today()?b.peak:null; }catch(e){ return null; } }
 function saveBest(v){ if(v==null) return; const b=getBest(); if(b==null||v>b){ try{ localStorage.setItem("bestPeak",JSON.stringify({day:today(),peak:v})); }catch(e){} } }
-function bestSay(){ const b=getBest(); return `${EX_SEC/60}분 동안 쉬지 않고 해요. 목표는 ${TARGET}! ` + (b==null ? "오늘 첫 기록의 주인공이 되어 보세요." : `오늘 최고 기록은 ${b}이에요. 도전해 볼까요?`); }
-function bestLine(){ const b=getBest(); return b==null ? " 오늘 첫 번째 기록의 주인공이 되어 보세요!" : ` 지금까지 오늘 최고 기록은 <b>${b}bpm</b>이에요. 이 기록에 도전해 볼까요?`; }
+function bestSay(){ const b=getBest(); return `${EX_SEC/60}분 동안 쉬지 않고 해요. 목표는 ${TARGET}! ` + (b==null ? "" : `오늘 최고 기록은 ${b}이에요. 도전해 볼까요?`); }
+function bestLine(){ const b=getBest(); return b==null ? "" : ` 지금까지 오늘 최고 기록은 <b>${b}bpm</b>이에요. 이 기록에 도전해 볼까요?`; }
 /* 단계 이동 버튼: 테스트하거나 중간에 앞뒤로 오갈 때 써요 */
 const NAV=[{step:1,label:"① 안정"},{step:3,label:"② 운동"},{step:4,label:"③ 회복"},{step:5,label:"④ 결과"}];
 function moveStep(d){ const i=NAV.findIndex(n=>n.step===lanes[cur].step); const n=NAV[i+d]; if(n) goStep(n.step); }
@@ -2765,6 +2768,7 @@ function askAfter(timedOut){
 }
 
 /* 자동 진행: 함께 누른 시각(t0)을 기준으로 음성 안내와 운동 시작을 맞춰요 */
+const COUNT_KO=["열","아홉","여덟","일곱","여섯","다섯","넷","셋","둘","하나"];
 function cue(L,key,atSec,base,text){
   const rel=(Date.now()-base)/1000;
   if(!L.cues) L.cues={};
@@ -2776,13 +2780,16 @@ function autoTick(){
     const rel=(Date.now()-L.t0)/1000;
     cue(L,"restEnd",REST_SEC,L.t0,"1분 끝! 지금 스마트밴드의 심박수를 입력하세요");
     cue(L,"demo",DEMO_AT,L.t0,"이제 버피테스트를 배워요. 대표 도우미의 시범을 잘 보세요");
-    cue(L,"rule",EX_AT-12,L.t0,bestSay());
-    cue(L,"ready",EX_AT-4.5,L.t0,"모두 일어나세요. 셋, 둘, 하나, 시작!");
+    cue(L,"rule",EX_AT-17,L.t0,bestSay());
+    cue(L,"stand",EX_AT-12,L.t0,"모두 일어나세요!");
+    COUNT_KO.forEach((w,k)=>cue(L,"n"+k,EX_AT-10+k,L.t0,w));   // 열, 아홉, … 하나
+    if(rel>=EX_AT) cue(L,"go",EX_AT,L.t0,"시작!");
     if(L.step===3){
       const t=$("#et"), m=$("#etm");
       if(rel>=EX_AT){ startEx(L.t0+EX_AT*1000); return; }
+      const big=$("#count10"); if(big){ const n=Math.ceil(EX_AT-rel); big.style.display = n<=10 ? "flex" : "none"; big.textContent=n; }
       if(t){ t.classList.add("wait"); t.textContent=fmt(Math.ceil(EX_AT-rel)); }
-      if(m) m.innerHTML = rel<DEMO_AT ? `⏳ 친구들이 입력을 마치면 시범이 시작돼요` : rel<EX_AT-5 ? `<b>👀 대표 도우미의 버피테스트 시범을 봐요</b> · 운동 시작까지` : `<b style="color:var(--red)">🔥 준비! 곧 시작해요</b>`;
+      if(m) m.innerHTML = rel<DEMO_AT ? `⏳ 친구들이 입력을 마치면 시범이 시작돼요` : rel<EX_AT-5 ? `<b>👀 대표 도우미의 버피테스트 시범을 봐요</b> · 운동 시작까지` : rel<EX_AT-12 ? `<b>📣 운동 규칙을 들어요</b>` : `<b style="color:var(--red)">🔥 모두 일어나세요! 열을 세면 시작해요</b>`;
     }
     if(L.step===1 && rel>=DEMO_AT && L.rest==null){
       const w=$("#w"); if(w){ w.style.display="block"; w.textContent= rel>=EX_AT ? "운동이 시작됐어요! 숫자를 입력하고 [다음]을 누르면 바로 운동 화면으로 넘어가요." : "곧 시범이 시작돼요. 숫자를 입력하고 [다음]을 눌러 주세요."; }
