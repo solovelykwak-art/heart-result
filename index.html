@@ -2773,7 +2773,7 @@ function autoTick(){
   const L=lanes[cur]; if(!$("#flow").classList.contains("on")) return;
   if(L.t0 && (L.step===1 || L.step===3) && !L.exStart){
     const rel=(Date.now()-L.t0)/1000;
-    cue(L,"restEnd",REST_SEC,L.t0,"1분 끝! 밴드 숫자를 도우미에게 보여 주세요");
+    cue(L,"restEnd",REST_SEC,L.t0,"1분 끝! 지금 스마트밴드의 심박수를 입력하세요");
     cue(L,"demo",DEMO_AT,L.t0,"이제 버피테스트를 배워요. 대표 도우미의 시범을 잘 보세요");
     cue(L,"ready",EX_AT-4.5,L.t0,"모두 일어나세요. 셋, 둘, 하나, 시작!");
     if(L.step===3){
