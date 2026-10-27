@@ -2613,7 +2613,7 @@ function renderStep(){
       <h2>② 미션1 · 심박수 UP! 🔥 (${EX_SEC/60}분)</h2>
       ${helper(`제가 버피테스트를 3번 보여 줄게요. 잘 보고 따라 해 주세요!${bestLine()}`,
         [`"시범을 잘 보세요" 소리가 나면 대표 도우미가 버피테스트 3번을 보여 줘요 (앉기 → 다리 뒤로 → 다시 모으기 → 점프)`, `"셋, 둘, 하나, 시작!" 소리와 함께 운동이 저절로 시작돼요 (누르지 않아도 돼요)`, `${CHECK_SEC}초 알림은 친구가 스스로 밴드를 보고 속도를 조절해요 (많이 힘들어 보이면 천천히 하게 해요)`, `${EX_SEC/60}분이 끝나면 친구 밴드를 보고 운동 직후 심박수를 입력해요`])}
-      <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안 쉬지 않고</b> 해요. 목표는 <b>${TARGET}bpm</b>! 천천히라도 내 속도로 계속해요. 힘들면 팔 동작 없이 앉았다 일어나기로 바꿔도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>
+      <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안 쉬지 않고</b> 해요. 목표는 <b>${TARGET}bpm</b>! 천천히라도 내 속도로 계속해요. 힘들면 팔 동작 없이 앉았다 일어나기로 바꿔도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>${getBest()!=null?`<p class="hint" style="font-size:18px">🏆 오늘 최고 기록 <b style="color:var(--pink)">${getBest()}bpm</b>에 도전해 보세요!</p>`:""}
       <div class="restbox"><div class="timer" id="et">${fmt(EX_SEC)}</div>
         <button class="btn btn-ghost" id="etb" onclick="startEx()" style="display:${L.t0?'none':''}">🔥 지금 바로 시작</button>
         <div class="rtmsg" id="etm">${L.t0 ? "음성 안내에 따라 운동이 저절로 시작돼요." : "[1분 쉬기 시작]을 누르지 않았다면 [🔥 지금 바로 시작]을 눌러요."}</div></div>
@@ -2669,6 +2669,7 @@ function renderStep(){
 const today=()=>new Date().toLocaleDateString("ko-KR");
 function getBest(){ try{ const b=JSON.parse(localStorage.getItem("bestPeak")||"null"); return b&&b.day===today()?b.peak:null; }catch(e){ return null; } }
 function saveBest(v){ if(v==null) return; const b=getBest(); if(b==null||v>b){ try{ localStorage.setItem("bestPeak",JSON.stringify({day:today(),peak:v})); }catch(e){} } }
+function bestSay(){ const b=getBest(); return `${EX_SEC/60}분 동안 쉬지 않고 해요. 목표는 ${TARGET}! ` + (b==null ? "오늘 첫 기록의 주인공이 되어 보세요." : `오늘 최고 기록은 ${b}이에요. 도전해 볼까요?`); }
 function bestLine(){ const b=getBest(); return b==null ? " 오늘 첫 번째 기록의 주인공이 되어 보세요!" : ` 지금까지 오늘 최고 기록은 <b>${b}bpm</b>이에요. 이 기록에 도전해 볼까요?`; }
 /* 단계 이동 버튼: 테스트하거나 중간에 앞뒤로 오갈 때 써요 */
 const NAV=[{step:1,label:"① 안정"},{step:3,label:"② 운동"},{step:4,label:"③ 회복"},{step:5,label:"④ 결과"}];
@@ -2701,10 +2702,9 @@ function doStep(to){
   L.step=to; renderStep();
 }
 /* 도우미가 보는 안내: 할 말 + 할 일 */
-function helper(say, todo, compact){
-  if(compact) return `<div class="helper compact"><div class="hsay">🙋 <b>대표 도우미가 말해요</b> “${say}”</div>
-    <div class="htodo1">${todo.map((t,i)=>`${"①②③④"[i]} ${t}`).join(" &nbsp; ")}</div></div>`;
-  return `<div class="helper"><div class="hsay">🙋 <b>대표 도우미가 말해요</b> “${say}”</div>
+function helper(say, todo, compact){   // 할 말(say)은 음성 안내가 대신해요. 화면에는 도우미 할 일만 보여요
+  if(compact) return `<div class="helper compact"><div class="hsay">📋 <b>도우미가 할 일</b> ${todo.map((t,i)=>`${"①②③④"[i]} ${t}`).join(" &nbsp; ")}</div></div>`;
+  return `<div class="helper"><div class="hsay">📋 <b>도우미가 할 일</b> <span style="font-size:15px">말은 음성 안내가 해 줘요. 숫자 입력만 챙겨 주세요.</span></div>
     <ol class="htodo">${todo.map(t=>`<li>${t}</li>`).join("")}</ol></div>`;
 }
 function numInput(id,val){
@@ -2758,7 +2758,8 @@ function askAfter(timedOut){
       if(!v||v<40||v>230){ $("#w2").style.display="block"; $("#w2").textContent="40~230 사이 숫자를 입력해 주세요."; return false; }
       L.after=v;
       if(L.hr1==null) L.hr1=v;   // 2분 전에 회복했거나 2분 값을 놓친 경우
-      saveBest(L.peak); L.step=5; renderStep(); return true;
+      saveBest(L.peak); L.step=5; renderStep();
+      announce("수고했어요! 나만의 처방전이 나왔어요. QR코드를 찍으면 휴대폰으로 가져갈 수 있어요"); return true;
     }, ()=>{ if(!L.timedOut){ L.end=null; if(L.method==="mind") startBowl(); } });
   setTimeout(()=>$("#v2")&&$("#v2").focus(),50);
 }
@@ -2775,6 +2776,7 @@ function autoTick(){
     const rel=(Date.now()-L.t0)/1000;
     cue(L,"restEnd",REST_SEC,L.t0,"1분 끝! 지금 스마트밴드의 심박수를 입력하세요");
     cue(L,"demo",DEMO_AT,L.t0,"이제 버피테스트를 배워요. 대표 도우미의 시범을 잘 보세요");
+    cue(L,"rule",EX_AT-12,L.t0,bestSay());
     cue(L,"ready",EX_AT-4.5,L.t0,"모두 일어나세요. 셋, 둘, 하나, 시작!");
     if(L.step===3){
       const t=$("#et"), m=$("#etm");
