@@ -2742,6 +2742,12 @@ function saveHr1(){
   if(!v||v<40||v>230){ m.textContent="40~230 사이 숫자를 입력해 주세요."; return; }
   L.hr1=v; $("#h1box").classList.remove("now"); $("#h1box").classList.add("saved");
   m.textContent = L.peak!=null ? `저장했어요: ${v}bpm (${HRR_SEC/60}분 동안 ${L.peak-v}bpm 내려감)` : `저장했어요: ${v}bpm`;
+  // 2분 심박수가 회복 목표(안정 시 +${RANGE} 이하) 안이면 회복 완료까지 자동으로 해요
+  if(L.peak!=null && v<=L.rest+RANGE && !L.end){
+    stopBowl(); L.end=Date.now(); L.timedOut=elapsed(L)>RECOVER_SEC; L.after=v;
+    saveBest(L.peak); L.step=5; renderStep();
+    announce("회복 목표 안에 들어왔어요! 회복 완료! 나만의 처방전이 나왔어요");
+  }
 }
 
 /* 회복 완료 / 시간 종료: 회복 후 심박수 입력 */
