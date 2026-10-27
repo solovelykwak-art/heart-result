@@ -2917,10 +2917,10 @@ function analyze(L){
 const BAND = [
   {name:"자라나는 중", face:"🌱", title:"회복탄력 능력이 자라나는 중이에요!",
    text:"오늘은 심박수가 천천히 돌아왔어요. 괜찮아요! 몸도 마음도 연습할수록 더 빨리 안정을 찾을 수 있어요.",
-   strengths:["오늘 끝까지 도전한 끈기가 있어요.","내 몸의 변화를 알아차리기 시작했어요.","나에게 맞는 회복법을 찾아가는 중이에요."]},
+   strengths:["오늘 끝까지 도전한 끈기가 있어요.","내 몸의 변화를 알아차리기 시작했어요.","심호흡으로 마음을 가라앉히는 법을 배웠어요."]},
   {name:"차근차근 성장 중", face:"🙂", title:"회복탄력 능력이 차근차근 자라고 있어요!",
    text:"스트레스 상황에서도 점점 안정을 찾을 수 있어요. 지금처럼 꾸준히 실천하면 더 강한 마음을 만들 수 있어요!",
-   strengths:["힘든 운동 뒤에도 스스로 안정을 찾았어요.","내게 맞는 회복법을 잘 골랐어요.","조금씩 더 빨리 회복하는 힘이 자라고 있어요."]},
+   strengths:["힘든 운동 뒤에도 스스로 안정을 찾았어요.","심호흡으로 마음을 차분하게 다스렸어요.","조금씩 더 빨리 회복하는 힘이 자라고 있어요."]},
   {name:"우수한 편", face:"😄", title:"회복탄력 능력이 우수한 편이에요!",
    text:"스트레스 상황에서도 빠르게 안정되는 힘이 좋아요. 지금처럼 꾸준히 실천하면 더 강한 마음을 만들 수 있어요!",
    strengths:["스트레스 상황에서 감정을 잘 조절해요.","마음이 흔들려도 빠르게 회복하는 힘이 있어요.","긍정적인 생각과 행동으로 다시 일어설 수 있어요."]}
@@ -2931,9 +2931,9 @@ const EMO_TIPS = {
   mind:["속상할 때 들리는 소리 3가지 세어 보기","부정적인 생각을 긍정적인 말로 바꿔 보기","내 감정 알아차리기 (감정 일기 한 줄)"]
 };
 const HABIT_TIPS = [
-  ["매일 10분 줄넘기나 걷기로 몸 깨우기","밤에 일찍 자서 충분히 쉬기","오늘 고른 회복법을 하루 1번 연습하기"],
-  ["매일 규칙적으로 수면하기","가벼운 운동 습관 만들기 (줄넘기·걷기)","오늘 고른 회복법을 꾸준히 연습하기"],
-  ["지금의 운동 습관 꾸준히 이어가기","다른 회복법도 하나 더 익혀 보기","친구에게 오늘 배운 회복법 알려 주기"]
+  ["매일 10분 줄넘기나 걷기로 몸 깨우기","밤에 일찍 자서 충분히 쉬기","4-4-6 심호흡을 하루 1번 연습하기"],
+  ["매일 규칙적으로 수면하기","가벼운 운동 습관 만들기 (줄넘기·걷기)","4-4-6 심호흡을 꾸준히 연습하기"],
+  ["지금의 운동 습관 꾸준히 이어가기","심호흡 말고 다른 회복법도 익혀 보기","친구에게 오늘 배운 심호흡 알려 주기"]
 ];
 const GROWTH = [
   "오늘 끝까지 해낸 나, 정말 멋져요! 연습할수록 몸과 마음은 더 튼튼해질 거예요.",
@@ -2973,7 +2973,7 @@ function resultHTML(L){
             <div class="v" style="background:#9be2b9">${L.after}</div><div class="q">다시 안정을 찾기까지<br>얼마나 걸렸나요?</div></div>
         </div>
         <div class="rtime"><span>💡 이 데이터는 내 감정 상태와 스트레스 정도를 알아보는 신호예요.</span>
-          <span style="white-space:nowrap">⏱ 회복 소요시간 <b>${timeTxt}</b></span></div>
+          <span style="white-space:nowrap">⏱ ${L.timedOut?"5분간 회복한 심박수":"회복 소요시간"} <b>${timeTxt}</b></span></div>
       </div>
       <div class="card c-blue"><h3>🛡️ 나의 회복탄력 능력 결과</h3>
         <div class="score">
@@ -3067,6 +3067,7 @@ function picResult(L){
     ${pill(80,176,"#168bfd",L.rest)}
     ${pill(327,182,"#fd476f",L.peak)}
     ${pill(567,184,"#30bd57",L.after)}
+    ${L.timedOut?`<div class="ov" style="${at(594,652,140,32)};background:#fdedf3;color:#1e3a8a;font-weight:800;${fs(26)};white-space:nowrap">회복한 심박수</div>`:""}
     <div class="ov" style="${at(598,688,134,40)};background:#fdedf3;color:#1a2a6e;${fs(30)}">${timeTxt}</div>
     <div class="ov" style="${at(134,650,400,70)};background:#ffebf4;color:#1f2a5c;font-weight:600;${fs(21)};line-height:1.45;justify-content:flex-start;text-align:left;white-space:nowrap">힘든 활동 뒤 다시 안정을 찾는 힘,<br>회복탄력성을 보여 주는 신호예요.</div>
     ${[[120,290,"#fdfdff",RX[band].emo],[500,247,"#fdfffb",RX[band].res]].map(([x,w,bg,list])=>
