@@ -2671,7 +2671,11 @@ function goStep(to){
   if(to>=3 && L.rest==null) miss.push("안정 시 심박수");
   if(to===5 && L.peak==null) miss.push("운동 직후 심박수");
   if(to===5 && L.hr1==null && L.after==null) miss.push("2분 심박수");
-  if(miss.length && !confirm(`아직 비어 있는 값이 있어요: ${miss.join(", ")}\n테스트용 예시값으로 채우고 넘어갈까요?\n(실제 체험 중이면 [취소]를 눌러 주세요)`)) return;
+  if(miss.length){ showModal("🧪 테스트용으로 넘어갈까요?", `아직 비어 있는 값이 있어요: <b>${miss.join(", ")}</b><br>예시값으로 채우고 다음 화면으로 넘어가요.<br><small>실제 체험 중이면 [취소]를 눌러 주세요.</small>`, ()=>{ doStep(to); }); return; }
+  doStep(to);
+}
+function doStep(to){
+  const L=lanes[cur];
   clearInterval(restTick); clearInterval(exTick); stopMusic(); stopRain(); stopBowl();
   $("#modal").classList.remove("on");
   if(to>=3 && L.rest==null) L.rest=85;
