@@ -2555,7 +2555,7 @@ const fmt = sec => { sec=Math.max(0,Math.round(sec)); return `${Math.floor(sec/6
 const elapsed = L => ((L.end ?? Date.now()) - L.start)/1000;
 
 /* ===== 첫 화면 ===== */
-const STATE_TXT = ["대기 중","① 안정 시 심박수","② 운동 준비","② 버피테스트","③ 심호흡 회복 중","④ 처방전 완성"];
+const STATE_TXT = ["대기 중","① 안정 시 심박수","② 회복법 고르기","③ 버피테스트","④ 회복 중","⑤ 처방전 완성"];
 function renderHome(){
   $("#lanes").innerHTML = lanes.map((L,i)=>{
     let big = "시작하기 ▶";
@@ -2604,13 +2604,13 @@ function renderStep(){
   }
   if(L.step===3){
     A.innerHTML = `<div class="box">
-      <h2>② 미션1 · 심박수 UP! 🔥 (${EX_SEC/60}분)</h2>
+      <h2>③ 미션1 · 심박수 UP! 🔥 (${EX_SEC/60}분)</h2>
       ${helper(`먼저 대표 도우미가 버피테스트 3번을 보여 줄 거예요. 잘 보고 따라 해 주세요. 대표 도우미가 "시작!"을 외치면 ${EX_SEC/60}분 동안 쉬지 않고 버피테스트를 해요. 천천히라도 멈추지 말아 주세요. 목표는 ${TARGET}bpm이에요! ${CHECK_SEC}초마다 "내 심박수를 확인해 보세요" 소리가 나면 내 밴드를 보고 힘을 조절해요. ${TARGET}이 안 되면 조금 더 빠르게, 너무 힘들면 천천히 해요. 운동이 끝나면 밴드를 도우미에게 보여 주세요.${bestLine()}`,
         [`대표 도우미가 버피테스트 3번을 천천히 시범으로 보여 줘요 (앉기 → 다리 뒤로 → 다시 모으기 → 점프)`, `대표 도우미가 "시작!"을 외치면 도우미 5명 모두 함께 [🔥 운동 시작]을 눌러요`, `${CHECK_SEC}초마다 알림이 오면 친구가 스스로 밴드를 보고 속도를 조절해요 (도우미는 기록하지 않아도 돼요. 많이 힘들어 보이면 천천히 하게 해요)`, `"조금만 더 힘내세요!" 응원해요`, `${EX_SEC/60}분이 끝나면 화면이 저절로 넘어가요. 친구 밴드를 보고 운동 직후 심박수를 입력해요`])}
       <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안 쉬지 않고</b> 해요. 목표는 <b>${TARGET}bpm</b>! 천천히라도 내 속도로 계속해요. 힘들면 팔 동작 없이 앉았다 일어나기로 바꿔도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>
       <div class="restbox"><div class="timer" id="et">${fmt(EX_SEC)}</div>
         <button class="btn btn-green" id="etb" onclick="startEx()">🔥 운동 시작</button>
-        <div class="rtmsg" id="etm">대표 도우미의 "시작!"에 맞춰 5대 모두 함께 눌러요. ${EX_SEC/60}분이 끝나면 바로 심호흡으로 회복해요.</div></div>
+        <div class="rtmsg" id="etm">대표 도우미의 "시작!"에 맞춰 5대 모두 함께 눌러요. ${EX_SEC/60}분이 끝나면 바로 고른 회복법으로 회복해요.</div></div>
       <div class="actions"><button class="btn btn-ghost" onclick="back()">◀ 이전</button></div></div>`;
   }
   if(L.step===2){
@@ -2627,7 +2627,7 @@ function renderStep(){
   if(L.step===4){
     const M=METHODS[L.method||"breath"], isBreath=(L.method||"breath")==="breath";
     A.innerHTML = `<div class="box">
-      <h2>③ 미션2 · ⌚ 밴드 보여 주기 → 🚶 정리운동 ${MOVE_SEC}초 → ${M.em} ${M.name}으로 심박수 DOWN 💧</h2>
+      <h2>④ 미션2 · ⌚ 밴드 보여 주기 → 🚶 정리운동 ${MOVE_SEC}초 → ${M.em} ${M.name}으로 심박수 DOWN 💧</h2>
       ${helper(`수고했어요! 먼저 손목 밴드를 저에게 보여 주세요. 그다음 팔다리 털기, 어깨 돌리기, 무릎 돌리기를 10초씩 하고, ${isBreath?"파란 공과 목소리를 따라 심호흡해 보세요":"내가 고른 "+M.name+"으로 심박수를 낮춰 보세요"}.`,
         [`친구가 보여 주는 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장] (${COOL[0].sec}초 안에)`, `${HRR_SEC/60}분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장]`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
       <div style="display:flex;align-items:center;gap:16px"><div class="timer" id="t" style="font-size:56px;margin:0">0:00</div>
@@ -2711,7 +2711,7 @@ function readNum(){
   if(!v || v<40 || v>230){ w.style.display="block"; w.textContent="40~230 사이 숫자를 입력해 주세요."; return null; }
   return v;
 }
-function back(){ clearInterval(exTick); stopMusic(); const L=lanes[cur]; L.step = L.step===3 ? 1 : L.step-1; renderStep(); }
+function back(){ clearInterval(exTick); stopMusic(); const L=lanes[cur]; L.step = Math.max(1, L.step-1); renderStep(); }
 function saveRest(){ const v=readNum(); if(v==null) return; clearInterval(restTick); stopRain(); lanes[cur].rest=v; lanes[cur].step=2; renderStep(); }
 function savePeak(){
   const v=readNum(); if(v==null) return;
