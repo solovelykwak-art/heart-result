@@ -49,7 +49,9 @@
   .stepbar i{flex:1;height:8px;border-radius:9px;background:var(--line)}
   .stepbar i.on{background:var(--blue)}
   .timer.wait{color:#94a3b8}
-  .count10{position:fixed;inset:0;align-items:center;justify-content:center;font-size:min(48vw,60vh);font-weight:900;color:var(--pink);background:rgba(255,255,255,.82);z-index:50;pointer-events:none}
+  .count10{position:fixed;inset:0;flex-direction:column;align-items:center;justify-content:center;font-size:min(48vw,60vh);font-weight:900;color:var(--pink);background:rgba(255,255,255,.93);z-index:50;pointer-events:none;line-height:1}
+  .count10.extimer{font-size:min(30vw,52vh);color:#ef4444;font-variant-numeric:tabular-nums}
+  .count10 small{font-size:min(3.4vw,4.5vh);font-weight:700;color:#334155;margin-top:2vh;text-align:center;padding:0 16px}
   .stepnav{display:flex;align-items:center;gap:6px;margin:6px 0 16px}
   .stepnav .chips{display:flex;gap:6px;flex:1}
   .stepnav .chip{flex:1;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 4px;font-size:15px;font-weight:700;color:#7a8199;cursor:pointer;font-family:inherit}
@@ -3155,6 +3157,8 @@ function startEx(at){
     if(!$("#et")){ clearInterval(exTick); stopMusic(); return; }
     const s=Math.min(EX_SEC,(Date.now()-st)/1000);
     t.textContent=fmt(Math.ceil(EX_SEC-s));
+    const big=$("#count10"); if(big){ big.style.display="flex"; big.classList.add("extimer");   // 카운트다운 자리에 같은 크기로 운동 타이머
+      big.innerHTML=`<div>${fmt(Math.ceil(EX_SEC-s))}</div><small>${m.innerHTML}</small>`; }
     const c=Math.floor(s/CHECK_SEC);
     if(c>lastCheck && s<EX_SEC){ lastCheck=c; checkBand(m); }
     if(s>=EX_SEC){ clearInterval(exTick); stopMusic(); finishEx(); }
