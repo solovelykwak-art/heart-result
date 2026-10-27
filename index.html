@@ -48,6 +48,7 @@
   .stepbar{display:flex;gap:6px;margin:6px 0 16px}
   .stepbar i{flex:1;height:8px;border-radius:9px;background:var(--line)}
   .stepbar i.on{background:var(--blue)}
+  .timer.wait{color:#94a3b8}
   .stepnav{display:flex;align-items:center;gap:6px;margin:6px 0 16px}
   .stepnav .chips{display:flex;gap:6px;flex:1}
   .stepnav .chip{flex:1;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 4px;font-size:15px;font-weight:700;color:#7a8199;cursor:pointer;font-family:inherit}
@@ -2533,6 +2534,11 @@ const MOVE_SEC = COOL_SEC - COOL[0].sec;   // 정리운동만의 시간
 const CHECK_SEC = 30;       // 운동 중 밴드 확인 알림 간격(초)
 const HRR_SEC = 120;        // 심박 회복: 회복 시작 후 이 시간(2분)에 심박수를 재요
 const REST_SEC = 60;        // 안정 시 심박수 재기 전 쉬는 시간
+/* 자동 진행 시간표: [1분 쉬기 시작]을 함께 누른 순간부터 (초) */
+const INPUT_SEC = 30;                       // 1분 쉬기 뒤 안정 시 심박수 입력 시간
+const DEMO_AT = REST_SEC + INPUT_SEC;       // 대표 도우미 버피테스트 시범 시작
+const DEMO_SEC = 20;                        // 시범 시간
+const EX_AT = DEMO_AT + DEMO_SEC;           // 운동 자동 시작
 const RECOVER_SEC = 300;    // 미션2(회복) 제한 시간 5분
 
 const METHODS = {
@@ -2590,8 +2596,8 @@ function renderStep(){
   if(L.step===1){
     A.innerHTML = `<div class="box">
       <h2>① 안정 시 심박수</h2>
-      ${helper("밴드 찬 손을 무릎에 올리고 편하게 앉아 주세요. 1분 동안 쉬면서 새소리를 들어 보세요.",
-        ["[⏱ 1분 쉬기 시작]을 눌러요", "1분이 끝나면 친구 손목 밴드의 숫자를 봐요", "숫자를 입력하고 [다음]을 눌러요"])}
+      ${helper("밴드 찬 손을 무릎에 올리고 편하게 앉아 주세요. 이제부터는 안내 목소리를 따라 하면 돼요.",
+        ["대표 도우미 신호에 5대 모두 함께 [⏱ 1분 쉬기 시작]을 눌러요 (함께 누르는 건 이번 한 번뿐이에요)", "1분 뒤 \"밴드를 보여 주세요\" 소리가 나면 친구 밴드 숫자를 입력하고 [다음]을 눌러요", "그다음은 음성 안내에 따라 운동까지 저절로 진행돼요"])}
       <p class="hint">[1분 쉬기 시작]을 누르고 편하게 앉아 쉬어요. 1분이 끝나면 입력칸이 나타나요. 그때 스마트밴드 숫자를 입력하세요. 이 숫자가 '기준값'이 돼요.</p>
       <div class="restbox"><div class="timer" id="rt">${fmt(REST_SEC)}</div>
         <button class="btn btn-green" id="rtb" onclick="startRest()">⏱ 1분 쉬기 시작</button>
@@ -2605,12 +2611,12 @@ function renderStep(){
   if(L.step===3){
     A.innerHTML = `<div class="box">
       <h2>② 미션1 · 심박수 UP! 🔥 (${EX_SEC/60}분)</h2>
-      ${helper(`먼저 대표 도우미가 버피테스트 3번을 보여 줄 거예요. 잘 보고 따라 해 주세요. 대표 도우미가 "시작!"을 외치면 ${EX_SEC/60}분 동안 쉬지 않고 버피테스트를 해요. 천천히라도 멈추지 말아 주세요. 목표는 ${TARGET}bpm이에요! ${CHECK_SEC}초마다 "내 심박수를 확인해 보세요" 소리가 나면 내 밴드를 보고 힘을 조절해요. ${TARGET}이 안 되면 조금 더 빠르게, 너무 힘들면 천천히 해요. 운동이 끝나면 밴드를 도우미에게 보여 주세요.${bestLine()}`,
-        [`대표 도우미가 버피테스트 3번을 천천히 시범으로 보여 줘요 (앉기 → 다리 뒤로 → 다시 모으기 → 점프)`, `대표 도우미가 "시작!"을 외치면 도우미 5명 모두 함께 [🔥 운동 시작]을 눌러요`, `${CHECK_SEC}초마다 알림이 오면 친구가 스스로 밴드를 보고 속도를 조절해요 (도우미는 기록하지 않아도 돼요. 많이 힘들어 보이면 천천히 하게 해요)`, `"조금만 더 힘내세요!" 응원해요`, `${EX_SEC/60}분이 끝나면 화면이 저절로 넘어가요. 친구 밴드를 보고 운동 직후 심박수를 입력해요`])}
+      ${helper(`제가 버피테스트를 3번 보여 줄게요. 잘 보고 따라 해 주세요!${bestLine()}`,
+        [`"시범을 잘 보세요" 소리가 나면 대표 도우미가 버피테스트 3번을 보여 줘요 (앉기 → 다리 뒤로 → 다시 모으기 → 점프)`, `"셋, 둘, 하나, 시작!" 소리와 함께 운동이 저절로 시작돼요 (누르지 않아도 돼요)`, `${CHECK_SEC}초 알림은 친구가 스스로 밴드를 보고 속도를 조절해요 (많이 힘들어 보이면 천천히 하게 해요)`, `${EX_SEC/60}분이 끝나면 친구 밴드를 보고 운동 직후 심박수를 입력해요`])}
       <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안 쉬지 않고</b> 해요. 목표는 <b>${TARGET}bpm</b>! 천천히라도 내 속도로 계속해요. 힘들면 팔 동작 없이 앉았다 일어나기로 바꿔도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>
       <div class="restbox"><div class="timer" id="et">${fmt(EX_SEC)}</div>
-        <button class="btn btn-green" id="etb" onclick="startEx()">🔥 운동 시작</button>
-        <div class="rtmsg" id="etm">대표 도우미의 "시작!"에 맞춰 5대 모두 함께 눌러요. ${EX_SEC/60}분이 끝나면 바로 심호흡으로 회복해요.</div></div>
+        <button class="btn btn-ghost" id="etb" onclick="startEx()" style="display:${L.t0?'none':''}">🔥 지금 바로 시작</button>
+        <div class="rtmsg" id="etm">${L.t0 ? "음성 안내에 따라 운동이 저절로 시작돼요." : "[1분 쉬기 시작]을 누르지 않았다면 [🔥 지금 바로 시작]을 눌러요."}</div></div>
       <div class="actions"><button class="btn btn-ghost" onclick="back()">◀ 이전</button></div></div>`;
   }
   if(L.step===2){
@@ -2627,7 +2633,7 @@ function renderStep(){
   if(L.step===4){
     A.innerHTML = `<div class="box">
       <h2>③ 미션2 · ⌚ 밴드 보여 주기 → 🚶 정리운동 ${MOVE_SEC}초 → 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
-      ${helper(`수고했어요! 먼저 손목 밴드를 저에게 보여 주세요. 그다음 팔다리 털기, 어깨 돌리기, 무릎 돌리기를 10초씩 하고, 파란 공과 목소리를 따라 심호흡해 보세요.`,
+      ${helper(`수고했어요! 밴드를 보여 준 다음, 목소리를 따라 정리운동과 심호흡을 해요.`,
         [`친구가 보여 주는 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장] (${COOL[0].sec}초 안에)`, `${HRR_SEC/60}분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장]`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
       <div style="display:flex;align-items:center;gap:16px"><div class="timer" id="t" style="font-size:56px;margin:0">0:00</div>
         <p class="hint" style="margin:0">기준값 <b>${L.rest}bpm</b> · 회복 목표 <b>${L.rest-RANGE}~${L.rest+RANGE}bpm</b> (최대 ${RECOVER_SEC/60}분)</p></div>
@@ -2681,6 +2687,8 @@ function doStep(to){
   clearInterval(restTick); clearInterval(exTick); stopMusic(); stopRain(); stopBowl();
   $("#modal").classList.remove("on");
   if(to>=3 && L.rest==null) L.rest=85;
+  if(to===1){ L.t0=null; L.exStart=null; }
+  if(to===3) L.exStart=null;
   if(to===4){ L.start=Date.now(); L.end=null; L.after=null; L.timedOut=false; L.method="breath"; lastCool=-1; lastPhase=-1; }
   if(to===5){
     if(L.peak==null) L.peak=Math.max(160, L.rest+40);
@@ -2694,9 +2702,9 @@ function doStep(to){
 }
 /* 도우미가 보는 안내: 할 말 + 할 일 */
 function helper(say, todo, compact){
-  if(compact) return `<div class="helper compact"><div class="hsay">🙋 <b>도우미가 말해요</b> “${say}”</div>
+  if(compact) return `<div class="helper compact"><div class="hsay">🙋 <b>대표 도우미가 말해요</b> “${say}”</div>
     <div class="htodo1">${todo.map((t,i)=>`${"①②③④"[i]} ${t}`).join(" &nbsp; ")}</div></div>`;
-  return `<div class="helper"><div class="hsay">🙋 <b>도우미가 말해요</b> “${say}”</div>
+  return `<div class="helper"><div class="hsay">🙋 <b>대표 도우미가 말해요</b> “${say}”</div>
     <ol class="htodo">${todo.map(t=>`<li>${t}</li>`).join("")}</ol></div>`;
 }
 function numInput(id,val){
@@ -2707,7 +2715,7 @@ function readNum(){
   if(!v || v<40 || v>230){ w.style.display="block"; w.textContent="40~230 사이 숫자를 입력해 주세요."; return null; }
   return v;
 }
-function back(){ clearInterval(exTick); stopMusic(); const L=lanes[cur]; L.step = L.step===3 ? 1 : L.step-1; renderStep(); }
+function back(){ clearInterval(exTick); stopMusic(); const L=lanes[cur]; L.step = L.step===3 ? 1 : L.step-1; if(L.step===1){ L.t0=null; L.exStart=null; } renderStep(); }
 function saveRest(){ const v=readNum(); if(v==null) return; clearInterval(restTick); stopRain(); lanes[cur].rest=v; lanes[cur].method="breath"; lanes[cur].step=3; renderStep(); }
 function savePeak(){
   const v=readNum(); if(v==null) return;
@@ -2742,6 +2750,7 @@ function askAfter(timedOut){
   if(!L.end) L.end = Date.now();
   L.timedOut = timedOut || elapsed(L) > RECOVER_SEC;
   if(L.timedOut) L.end = L.start + RECOVER_SEC*1000;
+  if(L.timedOut) announce("회복 시간이 끝났어요. 밴드를 도우미에게 보여 주세요");
   showModal(L.timedOut ? `⏰ ${RECOVER_SEC/60}분이 지났어요` : "✅ 회복 완료!",
     `${fmt(elapsed(L))} 걸렸어요. 지금 스마트밴드에 나온 심박수를 입력해 주세요.<br><br>${numInput("v2","")}<div class="warn" id="w2"></div>`,
     ()=>{
@@ -2754,7 +2763,33 @@ function askAfter(timedOut){
   setTimeout(()=>$("#v2")&&$("#v2").focus(),50);
 }
 
+/* 자동 진행: 함께 누른 시각(t0)을 기준으로 음성 안내와 운동 시작을 맞춰요 */
+function cue(L,key,atSec,base,text){
+  const rel=(Date.now()-base)/1000;
+  if(!L.cues) L.cues={};
+  if(rel>=atSec && !L.cues[key]){ L.cues[key]=1; if(rel<atSec+4) announce(text); }
+}
+function autoTick(){
+  const L=lanes[cur]; if(!$("#flow").classList.contains("on")) return;
+  if(L.t0 && (L.step===1 || L.step===3) && !L.exStart){
+    const rel=(Date.now()-L.t0)/1000;
+    cue(L,"restEnd",REST_SEC,L.t0,"1분 끝! 밴드 숫자를 도우미에게 보여 주세요");
+    cue(L,"demo",DEMO_AT,L.t0,"이제 버피테스트를 배워요. 대표 도우미의 시범을 잘 보세요");
+    cue(L,"ready",EX_AT-4.5,L.t0,"모두 일어나세요. 셋, 둘, 하나, 시작!");
+    if(L.step===3){
+      const t=$("#et"), m=$("#etm");
+      if(rel>=EX_AT){ startEx(L.t0+EX_AT*1000); return; }
+      if(t){ t.classList.add("wait"); t.textContent=fmt(Math.ceil(EX_AT-rel)); }
+      if(m) m.innerHTML = rel<DEMO_AT ? `⏳ 친구들이 입력을 마치면 시범이 시작돼요` : rel<EX_AT-5 ? `<b>👀 대표 도우미의 버피테스트 시범을 봐요</b> · 운동 시작까지` : `<b style="color:var(--red)">🔥 준비! 곧 시작해요</b>`;
+    }
+    if(L.step===1 && rel>=DEMO_AT && L.rest==null){
+      const w=$("#w"); if(w){ w.style.display="block"; w.textContent= rel>=EX_AT ? "운동이 시작됐어요! 숫자를 입력하고 [다음]을 누르면 바로 운동 화면으로 넘어가요." : "곧 시범이 시작돼요. 숫자를 입력하고 [다음]을 눌러 주세요."; }
+    }
+  }
+  if(L.step===4 && L.start && !L.end) cue(L,"hrr"+L.start,HRR_SEC,L.start,"2분이 되었어요. 밴드를 도우미에게 보여 주세요");
+}
 function updateTimer(){
+  autoTick();
   lanes.forEach((L,i)=>{
     if(L.step===4 && !L.end && elapsed(L)>=RECOVER_SEC){
       L.end = L.start + RECOVER_SEC*1000;
@@ -2788,10 +2823,11 @@ function togglePadSound(){
   showPadSound();
 }
 setTimeout(showPadSound,0);
+let annUntil=0;
 function announce(t){   // 운동 중 안내 음성 (패드 소리 설정을 따름)
   try{
     if(!padSound || !window.speechSynthesis) return;
-    speechSynthesis.cancel();
+    speechSynthesis.cancel(); annUntil=Date.now()+4500;   // 안내 말이 끝날 때까지 호흡 음성은 잠깐 쉬어요
     const u=new SpeechSynthesisUtterance(t); u.lang="ko-KR"; u.rate=0.95;
     const ko=speechSynthesis.getVoices().find(v=>/ko/i.test(v.lang)); if(ko) u.voice=ko;
     speechSynthesis.speak(u);
@@ -2799,7 +2835,7 @@ function announce(t){   // 운동 중 안내 음성 (패드 소리 설정을 따
 }
 function say(t){
   try{
-    if(!voiceOn || !padSound || !window.speechSynthesis) return;   // 소리 끈 패드는 호흡 음성도 꺼요
+    if(!voiceOn || !padSound || !window.speechSynthesis || Date.now()<annUntil) return;   // 소리 끈 패드는 호흡 음성도 꺼요
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(t); u.lang = "ko-KR"; u.rate = 0.9; u.pitch = 1.05;
     const ko = speechSynthesis.getVoices().find(v => /ko/i.test(v.lang)); if(ko) u.voice = ko;
@@ -3024,6 +3060,8 @@ function picResult(L){
 let restTick=null;
 function startRest(){
   clearInterval(restTick);
+  const L0=lanes[cur]; L0.t0=Date.now(); L0.exStart=null; L0.cues={};
+  announce("밴드 찬 손을 무릎에 올리고, 1분 동안 편하게 쉬어요");
   const end=Date.now()+REST_SEC*1000, b=$("#rtb"), m=$("#rtm"), t=$("#rt");
   b.textContent="⏱ 다시 시작"; m.textContent="🐦 새소리를 들으며 편하게 숨을 골라요…";
   stopRain(); startRain();
@@ -3094,9 +3132,10 @@ function checkBand(m){
       o.connect(g); g.connect(ac.destination); o.start(t+d); o.stop(t+d+0.55); });
   }catch(e){}
 }
-function startEx(){
+function startEx(at){
   clearInterval(exTick);
-  const st=Date.now(), b=$("#etb"), m=$("#etm"), t=$("#et"); lastCheck=0;
+  const L0=lanes[cur], st=at||Date.now(), b=$("#etb"), m=$("#etm"), t=$("#et");
+  L0.exStart=st; lastCheck=Math.floor(Math.max(0,(Date.now()-st)/1000)/CHECK_SEC); t.classList.remove("wait"); b.style.display="none";
   t.classList.remove("done"); b.textContent="🔥 다시 시작"; startMusic();
   m.textContent=`버피테스트! 목표 ${TARGET}bpm, 힘내세요!`;
   exTick=setInterval(()=>{
@@ -3114,7 +3153,7 @@ function startEx(){
 function finishEx(){
   const L=lanes[cur];
   L.peak=null; L.hr1=null; L.after=null; L.timedOut=false; L.method="breath";
-  L.start=Date.now(); L.end=null; L.step=4;
+  L.start=L.exStart ? Math.min(Date.now(), L.exStart+EX_SEC*1000) : Date.now(); L.end=null; L.step=4;
   announce("운동 끝! 손목 밴드를 도우미에게 보여 주세요");
   renderStep();
   setTimeout(()=>$("#pk")&&$("#pk").focus(),50);
