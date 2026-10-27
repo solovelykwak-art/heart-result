@@ -2747,6 +2747,8 @@ function saveHr1(){
     stopBowl(); L.end=Date.now(); L.timedOut=elapsed(L)>RECOVER_SEC; L.after=v;
     saveBest(L.peak); L.step=5; renderStep();
     announce("회복 목표 안에 들어왔어요! 회복 완료! 나만의 처방전이 나왔어요");
+  } else if(L.peak!=null && !L.end){
+    m.innerHTML += `<br><b>🌬️ 아직 회복 목표(${L.rest-RANGE}~${L.rest+RANGE}) 전이에요. 들어올 때까지 심호흡을 이어서 해요!</b>`;
   }
 }
 
@@ -2807,7 +2809,7 @@ function autoTick(){
   }
   if(L.step===4 && L.start && !L.end){
     cue(L,"pre"+L.start,HR1_AT-10,L.start,"10초 뒤 2분이 돼요. 밴드를 도우미에게 보여 주고, 심박수를 저장할 준비를 하세요");
-    cue(L,"hrr"+L.start,HR1_AT,L.start,"2분이 되었어요. 지금 밴드의 심박수를 저장하세요");
+    cue(L,"hrr"+L.start,HR1_AT,L.start,"2분이 되었어요. 지금 밴드의 심박수를 저장하세요. 회복 목표에 들어왔다면 회복 완료! 아직이라면 목표에 들어올 때까지 심호흡을 이어서 해요");
   }
 }
 function updateTimer(){
