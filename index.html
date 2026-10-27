@@ -2603,7 +2603,7 @@ function renderStep(){
     A.innerHTML = `<div class="box">
       <h2>① 안정 시 심박수</h2>
       ${helper("밴드 찬 손을 무릎에 올리고 편하게 앉아 주세요. 이제부터는 안내 목소리를 따라 하면 돼요.",
-        ["대표 도우미 신호에 5대 모두 함께 [⏱ 1분 쉬기 시작]을 눌러요 (함께 누르는 건 이번 한 번뿐이에요)", "1분 뒤 \"밴드를 보여 주세요\" 소리가 나면 친구 밴드 숫자를 입력하고 [다음]을 눌러요", "그다음은 음성 안내에 따라 운동까지 저절로 진행돼요"])}
+        ["대표 도우미 신호에 5대 모두 함께 [⏱ 1분 쉬기 시작]을 눌러요 (함께 누르는 건 이번 한 번뿐이에요)", "1분 뒤 \"지금 스마트밴드의 심박수를 입력하세요\" 소리가 나면 친구 밴드 숫자를 입력하고 [다음]을 눌러요 (30초 안에)", "그다음은 음성 안내에 따라 운동까지 저절로 진행돼요"])}
       <p class="hint">[1분 쉬기 시작]을 누르고 편하게 앉아 쉬어요. 1분이 끝나면 입력칸이 나타나요. 그때 스마트밴드 숫자를 입력하세요. 이 숫자가 '기준값'이 돼요.</p>
       <div class="restbox"><div class="timer" id="rt">${fmt(REST_SEC)}</div>
         <button class="btn btn-green" id="rtb" onclick="startRest()">⏱ 1분 쉬기 시작</button>
@@ -2618,7 +2618,7 @@ function renderStep(){
     A.innerHTML = `<div class="box">
       <h2>② 미션1 · 심박수 UP! 🔥 (${EX_SEC/60}분)</h2>
       ${helper(`제가 버피테스트를 3번 보여 줄게요. 잘 보고 따라 해 주세요!${bestLine()}`,
-        [`"시범을 잘 보세요" 소리가 나면 대표 도우미가 버피테스트 3번을 보여 줘요 (앉기 → 다리 뒤로 → 다시 모으기 → 점프)`, `"셋, 둘, 하나, 시작!" 소리와 함께 운동이 저절로 시작돼요 (누르지 않아도 돼요)`, `${CHECK_SEC}초 알림은 친구가 스스로 밴드를 보고 속도를 조절해요 (많이 힘들어 보이면 천천히 하게 해요)`, `${EX_SEC/60}분이 끝나면 친구 밴드를 보고 운동 직후 심박수를 입력해요`])}
+        [`"시범을 잘 보세요" 소리가 나면 대표 도우미가 버피테스트 3번을 보여 줘요 (앉기 → 다리 뒤로 → 다시 모으기 → 점프)`, `"모두 일어나세요!" 뒤 "열, 아홉 … 하나, 시작!" 소리와 함께 운동이 저절로 시작돼요 (누르지 않아도 돼요)`, `${CHECK_SEC}초 알림은 친구가 스스로 밴드를 보고 속도를 조절해요 (많이 힘들어 보이면 천천히 하게 해요)`, `${EX_SEC/60}분이 끝나면 친구 밴드를 보고 운동 직후 심박수를 입력해요`])}
       <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안 쉬지 않고</b> 해요. 목표는 <b>${TARGET}bpm</b>! 천천히라도 내 속도로 계속해요. 힘들면 팔 동작 없이 앉았다 일어나기로 바꿔도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>${getBest()!=null?`<p class="hint" style="font-size:18px">🏆 오늘 최고 기록 <b style="color:var(--pink)">${getBest()}bpm</b>에 도전해 보세요!</p>`:""}
       <div class="count10" id="count10" style="display:none">10</div>
       <div class="restbox"><div class="timer" id="et">${fmt(EX_SEC)}</div>
@@ -2641,7 +2641,7 @@ function renderStep(){
     A.innerHTML = `<div class="box">
       <h2>③ 미션2 · ⌚ 밴드 → 🚶 정리운동 → 🪑 앉기 → 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
       ${helper(`수고했어요! 밴드를 보여 준 다음, 목소리를 따라 정리운동과 심호흡을 해요.`,
-        [`친구가 보여 주는 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장] (${COOL[0].sec}초 안에)`, `심호흡 1분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장]`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
+        [`친구가 보여 주는 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장] (${COOL[0].sec}초 안에)`, `심호흡 1분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장] (목표 안이면 저절로 결과로 넘어가요)`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
       <div style="display:flex;align-items:center;gap:16px"><div class="timer" id="t" style="font-size:56px;margin:0">0:00</div>
         <p class="hint" style="margin:0">기준값 <b>${L.rest}bpm</b> · 회복 목표 <b>${L.rest-RANGE}~${L.rest+RANGE}bpm</b> (최대 ${RECOVER_SEC/60}분)</p></div>
       <div class="hr1box${L.peak!=null?' saved':' now'}" id="pkbox">
@@ -2686,7 +2686,7 @@ function goStep(to){
   const miss=[];
   if(to>=3 && L.rest==null) miss.push("안정 시 심박수");
   if(to===5 && L.peak==null) miss.push("운동 직후 심박수");
-  if(to===5 && L.hr1==null && L.after==null) miss.push("2분 심박수");
+  if(to===5 && L.hr1==null && L.after==null) miss.push("심호흡 1분 뒤 심박수");
   if(miss.length){ showModal("🧪 테스트용으로 넘어갈까요?", `아직 비어 있는 값이 있어요: <b>${miss.join(", ")}</b><br>예시값으로 채우고 다음 화면으로 넘어가요.<br><small>실제 체험 중이면 [취소]를 눌러 주세요.</small>`, ()=>{ doStep(to); }); return; }
   doStep(to);
 }
@@ -2742,7 +2742,7 @@ function saveHr1(){
   if(!v||v<40||v>230){ m.textContent="40~230 사이 숫자를 입력해 주세요."; return; }
   L.hr1=v; $("#h1box").classList.remove("now"); $("#h1box").classList.add("saved");
   m.textContent = L.peak!=null ? `저장했어요: ${v}bpm (운동 직후보다 ${L.peak-v}bpm 내려감)` : `저장했어요: ${v}bpm`;
-  // 2분 심박수가 회복 목표(안정 시 +${RANGE} 이하) 안이면 회복 완료까지 자동으로 해요
+  // 심호흡 1분 뒤 심박수가 회복 목표(안정 시 +${RANGE} 이하) 안이면 회복 완료까지 자동으로 해요
   if(L.peak!=null && v<=L.rest+RANGE && !L.end){
     stopBowl(); L.end=Date.now(); L.timedOut=elapsed(L)>RECOVER_SEC; L.after=v;
     saveBest(L.peak); L.step=5; renderStep();   // 음성 없이 이 태블릿만 조용히 결과로 넘어가요
@@ -2762,7 +2762,7 @@ function askAfter(timedOut){
   }
   stopBowl();
   if(!L.end) L.end = Date.now();
-  L.timedOut = timedOut || elapsed(L) > RECOVER_SEC;
+  L.timedOut = timedOut || elapsed(L) >= RECOVER_SEC;
   if(L.timedOut) L.end = L.start + RECOVER_SEC*1000;
   showModal(L.timedOut ? `⏰ ${RECOVER_SEC/60}분이 지났어요` : "✅ 회복 완료!",
     `${fmt(elapsed(L))} 걸렸어요. 지금 스마트밴드에 나온 심박수를 입력해 주세요.<br><br>${numInput("v2","")}<div class="warn" id="w2"></div>`,
@@ -2912,8 +2912,8 @@ setInterval(()=>{
 /* ===== 규칙 기반 분석 ===== */
 function analyze(L){
   const t = elapsed(L);
-  // 점수 70~100점 = 심박 회복(2분 동안 내려간 심박수) 70% + 회복 목표 도달 시간 30%
-  //  ① 2분 회복: 22bpm 미만 → 70~79 · 22~43 → 80~89 · 44 이상 → 90~100 (22bpm은 운동 연구의 2분 기준, 44bpm은 체험용 값)
+  // 점수 70~100점 = 심박 회복(운동 직후 → 심호흡 1분 뒤, 운동 끝 약 2분) 70% + 회복 목표 도달 시간 30%
+  //  ① 심박 회복: 22bpm 미만 → 70~79 · 22~43 → 80~89 · 44 이상 → 90~100 (22bpm은 운동 연구의 2분 기준, 44bpm은 체험용 값)
   //  ② 도달 시간: 심호흡 1분 재기 때 안정 시 심박수 ±5 안이면 100, 운동 끝 3분까지 걸리면 70
   const hrr = Math.max(0, L.peak - (L.hr1 ?? L.after));
   let hs;
@@ -3046,7 +3046,9 @@ function showModal(title, html, onOk, onCancel){
 }
 function closeModal(){ $("#modal").classList.remove("on"); if(mCancel) mCancel(); }
 function askReset(i){
-  showModal("기록을 지울까요?", `${i+1}번 체험자의 심박수 기록을 모두 지워요. 지운 기록은 되돌릴 수 없어요.`,
+  const guiding = padSound && sharedGuide(lanes[i]);   // 소리 태블릿이 아직 다른 친구들 회복 안내 중인지
+  showModal("기록을 지울까요?", `${i+1}번 체험자의 심박수 기록을 모두 지워요. 지운 기록은 되돌릴 수 없어요.`
+    + (guiding ? `<br><b style="color:#dc2626">⚠️ 이 태블릿은 음성 안내를 맡고 있어요. 지금 지우면 다른 친구들의 호흡·저장 안내가 멈춰요. 회복 시간(${RECOVER_SEC/60}분)이 끝난 뒤에 지워 주세요.</b>` : ""),
     ()=>{ clearInterval(restTick); clearInterval(exTick); stopMusic(); stopRain(); stopBowl(); lanes[i]=blank(); goHome(); });
 }
 function askResetAll(){
@@ -3154,7 +3156,7 @@ function stopMusic(){
   try{ m.out.gain.setTargetAtTime(0,m.ac.currentTime,0.15); setTimeout(()=>m.ac.close(),800); }catch(e){}
 }
 
-/* ===== 미션1: 운동 타이머 (0:00부터 최대 5분) ===== */
+/* ===== 미션1: 운동 타이머 (2분, 쉬지 않고) ===== */
 let exTick=null, lastCheck=0;
 /* 30초마다: 띵동 소리 + "밴드 확인" 안내 */
 const CHECK_SAY=[`내 심박수를 확인해 보세요. 목표는 ${TARGET}!`, `${TARGET}을 넘었다면 최고 기록에 도전해요!`, `${LIMIT}이 되면 바로 멈춰요!`];
