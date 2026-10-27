@@ -2745,8 +2745,7 @@ function saveHr1(){
   // 2분 심박수가 회복 목표(안정 시 +${RANGE} 이하) 안이면 회복 완료까지 자동으로 해요
   if(L.peak!=null && v<=L.rest+RANGE && !L.end){
     stopBowl(); L.end=Date.now(); L.timedOut=elapsed(L)>RECOVER_SEC; L.after=v;
-    saveBest(L.peak); L.step=5; renderStep();
-    announce("회복 목표 안에 들어왔어요! 회복 완료! 나만의 처방전이 나왔어요");
+    saveBest(L.peak); L.step=5; renderStep();   // 음성 없이 이 태블릿만 조용히 결과로 넘어가요
   } else if(L.peak!=null && !L.end){
     m.innerHTML += `<br><b>🌬️ 아직 회복 목표(${L.rest-RANGE}~${L.rest+RANGE}) 전이에요. 들어올 때까지 심호흡을 이어서 해요!</b>`;
   }
@@ -2765,7 +2764,6 @@ function askAfter(timedOut){
   if(!L.end) L.end = Date.now();
   L.timedOut = timedOut || elapsed(L) > RECOVER_SEC;
   if(L.timedOut) L.end = L.start + RECOVER_SEC*1000;
-  if(L.timedOut) announce("회복 시간이 끝났어요. 밴드를 도우미에게 보여 주세요");
   showModal(L.timedOut ? `⏰ ${RECOVER_SEC/60}분이 지났어요` : "✅ 회복 완료!",
     `${fmt(elapsed(L))} 걸렸어요. 지금 스마트밴드에 나온 심박수를 입력해 주세요.<br><br>${numInput("v2","")}<div class="warn" id="w2"></div>`,
     ()=>{
@@ -2773,8 +2771,7 @@ function askAfter(timedOut){
       if(!v||v<40||v>230){ $("#w2").style.display="block"; $("#w2").textContent="40~230 사이 숫자를 입력해 주세요."; return false; }
       L.after=v;
       if(L.hr1==null) L.hr1=v;   // 2분 전에 회복했거나 2분 값을 놓친 경우
-      saveBest(L.peak); L.step=5; renderStep();
-      announce("수고했어요! 나만의 처방전이 나왔어요. QR코드를 찍으면 휴대폰으로 가져갈 수 있어요"); return true;
+      saveBest(L.peak); L.step=5; renderStep(); return true;
     }, ()=>{ if(!L.timedOut){ L.end=null; if(L.method==="mind") startBowl(); } });
   setTimeout(()=>$("#v2")&&$("#v2").focus(),50);
 }
@@ -2786,6 +2783,7 @@ function cue(L,key,atSec,base,text){
   if(!L.cues) L.cues={};
   if(rel>=atSec && !L.cues[key]){ L.cues[key]=1; if(rel<atSec+4) announce(text); }
 }
+function sharedGuide(L){ return L.start && (L.step===4 || L.step===5) && (Date.now()-L.start)/1000 < RECOVER_SEC+5; }
 function autoTick(){
   const L=lanes[cur]; if(!$("#flow").classList.contains("on")) return;
   if(L.t0 && (L.step===1 || L.step===3) && !L.exStart){
@@ -2807,7 +2805,8 @@ function autoTick(){
       const w=$("#w"); if(w){ w.style.display="block"; w.textContent= rel>=EX_AT ? "운동이 시작됐어요! 숫자를 입력하고 [다음]을 누르면 바로 운동 화면으로 넘어가요." : "곧 시범이 시작돼요. 숫자를 입력하고 [다음]을 눌러 주세요."; }
     }
   }
-  if(L.step===4 && L.start && !L.end){
+  if(sharedGuide(L)){   // 대표(소리) 태블릿은 자기 친구가 먼저 끝나도 다른 친구들을 위해 안내를 이어 가요
+    cue(L,"end"+L.start,RECOVER_SEC,L.start,"회복 시간이 끝났어요. 밴드를 도우미에게 보여 주세요");
     cue(L,"pre"+L.start,HR1_AT-10,L.start,"10초 뒤 2분이 돼요. 밴드를 도우미에게 보여 주고, 심박수를 저장할 준비를 하세요");
     cue(L,"hrr"+L.start,HR1_AT,L.start,"2분이 되었어요. 지금 밴드의 심박수를 저장하세요. 회복 목표에 들어왔다면 회복 완료! 아직이라면 목표에 들어올 때까지 심호흡을 이어서 해요");
   }
@@ -2873,6 +2872,18 @@ function toggleVoice(){
 }
 setInterval(()=>{
   const bg=$("#bg"), L=lanes[cur];
+  if(!bg && L && L.step===5 && padSound && sharedGuide(L)){   // 결과 화면에서도 소리 태블릿은 정리운동·호흡 음성을 이어 가요
+    const el=(Date.now()-L.start)/1000;
+    if(el < COOL_SEC){ let r=el, j=0; while(r>=COOL[j].sec){ r-=COOL[j].sec; j++; }
+      if(lastCool!==j){ lastCool=j; if(j>0) say(COOL[j].say||COOL[j].name); } lastPhase=-1; return; }
+    if(el >= RECOVER_SEC) return;
+    if(lastCool!==-1){ lastCool=-1; say("이제 심호흡을 시작해요"); lastPhase=-2; return; }
+    if(lastPhase===-2 && el < COOL_SEC+1.6) return;
+    let s=(el-COOL_SEC) % BREATH.reduce((a,b)=>a+b.sec,0), i=0;
+    while(s>=BREATH[i].sec){ s-=BREATH[i].sec; i++; }
+    if(i!==lastPhase){ lastPhase=i; say(BREATH[i].say); }
+    return;
+  }
   if(!bg || !L || !L.start){ if(lastPhase!==-1){ lastPhase=-1; try{ speechSynthesis.cancel(); }catch(e){} } return; }
   const el=((L.end ?? Date.now())-L.start)/1000, cool=$("#cool");
   if(el < COOL_SEC){
