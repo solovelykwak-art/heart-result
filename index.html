@@ -2509,7 +2509,7 @@ const LANES = 1;            // 태블릿 1대에 1명
 const RANGE = 5;            // 회복 기준: 안정 시 심박수 ±5bpm
 const LIMIT = 200;          // 이 심박수 이상이면 즉시 중단 안내
 const TARGET = 150;         // 미션1 목표 심박수
-const EX_SEC = 180;         // 미션1 운동 시간(3분 고정)
+const EX_SEC = 120;         // 미션1 운동 시간(2분 고정, 쉬지 않고)
 const CHECK_SEC = 30;       // 운동 중 밴드 확인 알림 간격(초)
 const HRR_SEC = 120;        // 심박 회복: 회복 시작 후 이 시간(2분)에 심박수를 재요
 const REST_SEC = 60;        // 안정 시 심박수 재기 전 쉬는 시간
@@ -2581,9 +2581,9 @@ function renderStep(){
   if(L.step===3){
     A.innerHTML = `<div class="box">
       <h2>② 미션1 · 심박수 UP! 🔥 (${EX_SEC/60}분)</h2>
-      ${helper(`선생님이 "시작!" 하면 ${EX_SEC/60}분 동안 버피테스트를 해요. 목표는 ${TARGET}bpm이에요! "심박수를 확인하세요" 소리가 나면 잠깐 손목을 보여 주세요.`,
+      ${helper(`선생님이 "시작!" 하면 ${EX_SEC/60}분 동안 쉬지 않고 버피테스트를 해요. 천천히라도 멈추지 말아 주세요. 목표는 ${TARGET}bpm이에요! "심박수를 확인하세요" 소리가 나면 잠깐 손목을 보여 주세요.`,
         [`선생님 "시작!" 신호에 [🔥 운동 시작]을 눌러요`, `${CHECK_SEC}초마다 알림이 오면 친구 밴드 숫자를 봐요 (${LIMIT} 넘으면 바로 멈추게 해요)`, `"조금만 더 힘내세요!" 응원해요`, `${EX_SEC/60}분이 끝나면 화면이 저절로 회복 단계로 넘어가요`])}
-      <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안</b> 해요. 목표는 <b>${TARGET}bpm</b>! 체력에 맞게 쉬어 가며 해도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>
+      <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안 쉬지 않고</b> 해요. 목표는 <b>${TARGET}bpm</b>! 천천히라도 내 속도로 계속해요. 힘들면 팔 동작 없이 앉았다 일어나기로 바꿔도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>
       <div class="restbox"><div class="timer" id="et">${fmt(EX_SEC)}</div>
         <button class="btn btn-green" id="etb" onclick="startEx()">🔥 운동 시작</button>
         <div class="rtmsg" id="etm">선생님 신호에 맞춰 버튼을 눌러요. ${EX_SEC/60}분이 끝나면 바로 심호흡으로 회복해요.</div></div>
