@@ -81,7 +81,7 @@ function card(kind){
   const d=data[kind], n=d.now, hot=kind==="hot";
   if(kind==="score") return scoreCard(d);
   const head=hot?`<h2>🔥 최고 심박수</h2><p class="d">운동 직후 가장 높이 올린 기록</p>`
-               :`<h2>💚 회복왕</h2><p class="d">운동 뒤 가장 많이 낮춘 기록</p>`;
+               :`<h2>💚 회복왕</h2><p class="d">2분 동안 가장 많이 낮춘 기록</p>`;
   let body;
   if(!n) body=`<div class="empty">아직 기록이 없어요<br>첫 번째 주인공이 되어 보세요!</div>`;
   else{
@@ -113,7 +113,7 @@ function openPanel(kind){
     :kind==="hot"
     ?`<div class="row"><label for="f1">운동 직후 심박수</label><input id="f1" type="number" inputmode="numeric" placeholder="예: 172"></div>`
     :`<div class="two"><div class="row"><label for="f1">운동 직후 심박수</label><input id="f1" type="number" inputmode="numeric" placeholder="예: 160"></div>
-       <div class="row"><label for="f2">심호흡 1분 뒤 심박수</label><input id="f2" type="number" inputmode="numeric" placeholder="예: 112"></div></div>`;
+       <div class="row"><label for="f2">2분 뒤 심박수</label><input id="f2" type="number" inputmode="numeric" placeholder="예: 112"></div></div>`;
   $("msg").textContent="";$("undoBtn").disabled=!data[kind].hist.length;$("undoBtn").style.opacity=data[kind].hist.length?1:.4;
   $("panel").classList.add("on");setTimeout(()=>$("f1").focus(),50);
 }
@@ -132,13 +132,13 @@ function saveRec(){
     rec={peak:a};
   }else{
     const b=+$("f2").value;
-    if(!(b>=40&&b<=230)){m.textContent="심호흡 1분 뒤 심박수를 확인해 주세요 (40~230).";return}
-    if(b>=a){m.textContent="심호흡 1분 뒤 심박수는 운동 직후보다 낮아야 해요.";return}
+    if(!(b>=40&&b<=230)){m.textContent="2분 뒤 심박수를 확인해 주세요 (40~230).";return}
+    if(b>=a){m.textContent="2분 뒤 심박수는 운동 직후보다 낮아야 해요.";return}
     if(n&&a-b<=n.drop){m.textContent=`${a-b}만큼 내려왔어요. 지금 기록(−${n.drop})보다 많이 내려와야 바꿀 수 있어요.`;return}
     rec={peak:a,hr2:b,drop:a-b};
   }
   if(n)d.hist.push(n);d.now=rec;save();closePanel();render(mode);
-  say(mode==="hot"?`🎉 새로운 최고 심박수 ${rec.peak}bpm! 대단해요!`:`🎉 새로운 회복왕! 운동 뒤 ${rec.drop}bpm을 낮췄어요!`);
+  say(mode==="hot"?`🎉 새로운 최고 심박수 ${rec.peak}bpm! 대단해요!`:`🎉 새로운 회복왕! 2분 만에 ${rec.drop}bpm을 낮췄어요!`);
 }
 /* 되돌리기·지우기는 두 번 눌러야 돼요 (실수 방지) */
 let armed=null,armT=null,armBtn=null,armOld="";
