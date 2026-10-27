@@ -133,6 +133,32 @@
   .restbox .timer.done{color:var(--green)}
   .rtmsg{font-size:17px;color:var(--sub)}
   .rtmsg b{color:var(--green)}
+  .helper{margin:0 0 14px;padding:12px 16px;border-radius:14px;background:#fff6e5;border:1px dashed #f1b24a;font-size:16px;line-height:1.5;color:#6b4a00}
+  .helper .hsay{font-size:18px;color:#5a3d00}
+  .helper .hsay b{background:#f59e0b;color:#fff;border-radius:8px;padding:1px 8px;margin-right:6px;font-size:15px}
+  .helper .htodo{margin:6px 0 0 22px;padding:0;color:#6b4a00}
+  .helper .htodo li{margin:2px 0}
+  .helper.compact{padding:8px 14px;margin-bottom:8px}
+  .helper .htodo1{font-size:15px;margin-top:2px}
+  .btn.pulse{animation:pulse 1s infinite;background:var(--green)}
+  @keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(46,180,110,.5)}50%{transform:scale(1.06);box-shadow:0 0 0 10px rgba(46,180,110,0)}}
+  .breath{display:flex;align-items:center;gap:28px;background:#eaf4ff;border-radius:18px;padding:18px 24px;margin:10px 0}
+  .breath .ball{width:130px;height:130px;flex:none;border-radius:50%;background:radial-gradient(circle at 35% 35%,#bfe0ff,#4f9cf5);box-shadow:0 6px 20px rgba(79,156,245,.35)}
+  .breath .bph{font-size:30px;font-weight:800;color:#1f4f99}
+  .breath .bsec{font-size:56px;font-weight:800;color:#4f9cf5;line-height:1.1}
+  .breath .bsteps{font-size:16px;color:var(--sub)}
+  .breath .bsteps span.on{color:#1f4f99;font-weight:800;background:#fff;border-radius:8px;padding:2px 6px}
+  .hr1box{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f3f6fb;border:2px solid var(--line);border-radius:16px;padding:12px 16px;margin:4px 0 12px;font-size:17px}
+  .hr1box input{width:110px;font-size:28px;font-weight:800;text-align:center;border:2px solid var(--line);border-radius:12px;padding:4px}
+  .hr1box #h1msg{flex:1;color:var(--sub)}
+  .hr1box.now{border-color:#f59e0b;background:#fff6e5;animation:pulse 1s infinite}
+  .hr1box.now #h1msg{color:#b45309;font-weight:800}
+  .hr1box.saved{border-color:var(--green);background:#e3f8ec}
+  .hr1box.saved #h1msg{color:#137a45;font-weight:700}
+  .restlabel{font-size:19px;font-weight:800;color:#1f4f99;margin:4px 0 8px}
+  .breath .voicebtn{margin-left:auto;align-self:flex-start;font-size:16px;padding:10px 14px}
+  .restbox.check{background:#fff1d6;outline:3px solid #f59e0b;animation:pulse 1s 3}
+  .okmsg{margin-top:14px;padding:14px 16px;border-radius:14px;background:#e3f8ec;color:#137a45;font-weight:700;font-size:18px;display:none}
 </style>
 </head>
 <body>
@@ -155,7 +181,10 @@
   <section id="flow" class="panel">
     <header class="top">
       <div><h1 id="flowTitle">1번 체험자</h1></div>
-      <button class="btn btn-ghost" onclick="askReset(0)">🗑 처음부터</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" id="padSnd" onclick="togglePadSound()">🔊 음악·효과음 켬</button>
+        <button class="btn btn-ghost" onclick="askReset(0)">🗑 처음부터</button>
+      </div>
     </header>
     <div class="stepbar" id="stepbar"></div>
     <div id="stepArea"></div>
@@ -2479,8 +2508,12 @@ var qrcode = function() {
 const LANES = 1;            // 태블릿 1대에 1명
 const RANGE = 5;            // 회복 기준: 안정 시 심박수 ±5bpm
 const LIMIT = 200;          // 이 심박수 이상이면 즉시 중단 안내
+const TARGET = 150;         // 미션1 목표 심박수
+const EX_SEC = 180;         // 미션1 운동 시간(3분 고정)
+const CHECK_SEC = 30;       // 운동 중 밴드 확인 알림 간격(초)
+const HRR_SEC = 120;        // 심박 회복: 회복 시작 후 이 시간(2분)에 심박수를 재요
 const REST_SEC = 60;        // 안정 시 심박수 재기 전 쉬는 시간
-const RECOVER_SEC = 600;    // 미션2(회복) 제한 시간 10분
+const RECOVER_SEC = 300;    // 미션2(회복) 제한 시간 5분
 
 const METHODS = {
   breath:{em:"🌬️",name:"호흡법",desc:"4초 들이마시고, 4초 멈추고, 6초 내쉬기",
@@ -2492,7 +2525,7 @@ const METHODS = {
 };
 
 /* ===== 상태 (메모리에만 보관, 저장 안 함) ===== */
-const blank = () => ({step:0, rest:null, peak:null, method:null, start:null, end:null, after:null, timedOut:false});
+const blank = () => ({step:0, rest:null, peak:null, method:null, start:null, end:null, after:null, hr1:null, timedOut:false});
 let lanes = Array.from({length:LANES}, blank);
 let cur = 0;
 let tick = null;
@@ -2502,7 +2535,7 @@ const fmt = sec => { sec=Math.max(0,Math.round(sec)); return `${Math.floor(sec/6
 const elapsed = L => ((L.end ?? Date.now()) - L.start)/1000;
 
 /* ===== 첫 화면 ===== */
-const STATE_TXT = ["대기 중","① 안정 시 심박수","② 버피테스트","③ 회복법 고르기","④ 회복 중","⑤ 처방전 완성"];
+const STATE_TXT = ["대기 중","① 안정 시 심박수","② 운동 준비","② 버피테스트","③ 심호흡 회복 중","④ 처방전 완성"];
 function renderHome(){
   $("#lanes").innerHTML = lanes.map((L,i)=>{
     let big = "시작하기 ▶";
@@ -2533,32 +2566,34 @@ function renderStep(){
   if(L.step===1){
     A.innerHTML = `<div class="box">
       <h2>① 안정 시 심박수</h2>
-      <p class="hint">편하게 앉아 1분 동안 쉰 뒤, 스마트밴드에 나온 숫자를 입력하세요. 이 숫자가 '기준값'이 돼요.</p>
+      ${helper("밴드 찬 손을 무릎에 올리고 편하게 앉아 주세요. 1분 동안 쉬면서 새소리를 들어 보세요.",
+        ["[⏱ 1분 쉬기 시작]을 눌러요", "1분이 끝나면 친구 손목 밴드의 숫자를 봐요", "숫자를 입력하고 [다음]을 눌러요"])}
+      <p class="hint">[1분 쉬기 시작]을 누르고 편하게 앉아 쉬어요. 1분이 끝나면 입력칸이 나타나요. 그때 스마트밴드 숫자를 입력하세요. 이 숫자가 '기준값'이 돼요.</p>
       <div class="restbox"><div class="timer" id="rt">${fmt(REST_SEC)}</div>
         <button class="btn btn-green" id="rtb" onclick="startRest()">⏱ 1분 쉬기 시작</button>
         <div class="rtmsg" id="rtm">버튼을 누르고 편하게 앉아 숨을 고르세요.</div></div>
+      <div id="restIn" style="display:${L.rest!=null?'block':'none'}">
+      <div class="restlabel">💓 지금 스마트밴드에 나온 심박수</div>
       ${numInput("v", L.rest)}
       <div class="warn" id="w"></div>
-      <div class="actions"><button class="btn btn-main" onclick="saveRest()">다음 ▶</button></div></div>`;
+      <div class="actions"><button class="btn btn-main" onclick="saveRest()">다음 ▶</button></div></div></div>`;
   }
   if(L.step===3){
     A.innerHTML = `<div class="box">
-      <h2>③ 미션1 · 심박수 UP! 🔥</h2>
-      <p class="hint">버피테스트로 심박수를 올려요(8~10회, 체력에 맞게). <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b><br>운동이 끝난 순간 밴드에 나온 가장 높은 심박수를 입력하세요.</p>
-      ${numInput("v", L.peak)}
-      <div class="warn" id="w"></div>
-      <div class="actions">
-        <button class="btn btn-ghost" onclick="back()">◀ 이전</button>
-        <button class="btn btn-main" onclick="savePeak()">다음 ▶ 회복 타이머 시작</button></div></div>`;
-    $("#v").addEventListener("input", e=>{
-      const v=+e.target.value, w=$("#w");
-      if(v>=LIMIT){ w.style.display="block"; w.textContent=`⚠️ ${LIMIT}bpm 이상이에요! 운동을 바로 멈추고 회복 활동으로 넘어가세요.`; }
-      else w.style.display="none";
-    });
+      <h2>② 미션1 · 심박수 UP! 🔥 (${EX_SEC/60}분)</h2>
+      ${helper(`선생님이 "시작!" 하면 ${EX_SEC/60}분 동안 버피테스트를 해요. 목표는 ${TARGET}bpm이에요! "심박수를 확인하세요" 소리가 나면 잠깐 손목을 보여 주세요.`,
+        [`선생님 "시작!" 신호에 [🔥 운동 시작]을 눌러요`, `${CHECK_SEC}초마다 알림이 오면 친구 밴드 숫자를 봐요 (${LIMIT} 넘으면 바로 멈추게 해요)`, `"조금만 더 힘내세요!" 응원해요`, `${EX_SEC/60}분이 끝나면 화면이 저절로 회복 단계로 넘어가요`])}
+      <p class="hint">버피테스트를 <b>${EX_SEC/60}분 동안</b> 해요. 목표는 <b>${TARGET}bpm</b>! 체력에 맞게 쉬어 가며 해도 돼요. <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b></p>
+      <div class="restbox"><div class="timer" id="et">${fmt(EX_SEC)}</div>
+        <button class="btn btn-green" id="etb" onclick="startEx()">🔥 운동 시작</button>
+        <div class="rtmsg" id="etm">선생님 신호에 맞춰 버튼을 눌러요. ${EX_SEC/60}분이 끝나면 바로 심호흡으로 회복해요.</div></div>
+      <div class="actions"><button class="btn btn-ghost" onclick="back()">◀ 이전</button></div></div>`;
   }
   if(L.step===2){
     A.innerHTML = `<div class="box">
       <h2>② 나만의 회복법 고르기 🌈</h2>
+      ${helper("운동이 끝나면 심박수를 다시 낮출 거예요. 어떤 방법으로 해 보고 싶나요? 하나 골라 주세요!",
+        ["세 가지 방법을 짧게 읽어 줘요", "친구가 직접 화면을 누르게 해요"])}
       <p class="hint">체험자가 직접 하나를 눌러요. 운동이 끝나면 이 방법으로 심박수를 낮출 거예요.</p>
       <div class="methods">${Object.entries(METHODS).map(([k,m])=>`
         <button class="method" onclick="pickMethod('${k}')"><div class="em">${m.em}</div><b>${m.name}</b><small>${m.desc}</small></button>`).join("")}
@@ -2566,19 +2601,43 @@ function renderStep(){
       <div class="actions"><button class="btn btn-ghost" onclick="back()">◀ 이전</button></div></div>`;
   }
   if(L.step===4){
-    const m = METHODS[L.method];
     A.innerHTML = `<div class="box">
-      <h2>④ 미션2 · ${m.em} ${m.name}으로 심박수 DOWN 💧</h2>
-      <p class="hint">기준값 <b>${L.rest}bpm</b> · 목표: <b>${L.rest-RANGE}~${L.rest+RANGE}bpm</b> 안으로 돌아오기 (제한 ${RECOVER_SEC/60}분)</p>
-      <div class="timer" id="t">0:00</div>
-      <div class="guide">${m.guide}</div>
+      <h2>③ 미션2 · 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
+      ${helper(`수고했어요! 이제 파란 공과 목소리를 따라 천천히 심호흡해 보세요.`,
+        [`지금 바로 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장]`, `${HRR_SEC/60}분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장]`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
+      <div style="display:flex;align-items:center;gap:16px"><div class="timer" id="t" style="font-size:56px;margin:0">0:00</div>
+        <p class="hint" style="margin:0">기준값 <b>${L.rest}bpm</b> · 회복 목표 <b>${L.rest-RANGE}~${L.rest+RANGE}bpm</b> (최대 ${RECOVER_SEC/60}분)</p></div>
+      <div class="hr1box${L.peak!=null?' saved':' now'}" id="pkbox">
+        <b>💓 운동 직후 심박수</b>
+        <span id="pkmsg">${L.peak!=null ? `저장했어요: ${L.peak}bpm` : `지금 밴드 숫자를 입력해요`}</span>
+        <input id="pk" type="number" inputmode="numeric" min="40" max="230" placeholder="0" value="${L.peak??''}">
+        <button class="btn btn-main" onclick="savePeakNow()">저장</button>
+      </div>
+      <div class="hr1box${L.hr1!=null?' saved':''}" id="h1box">
+        <b>⏱ ${HRR_SEC/60}분 심박수</b>
+        <span id="h1msg">${L.hr1!=null ? `저장했어요: ${L.hr1}bpm` : `회복 ${HRR_SEC/60}분이 되면 밴드 숫자를 입력해요`}</span>
+        <input id="h1" type="number" inputmode="numeric" min="40" max="230" placeholder="0" value="${L.hr1??''}">
+        <button class="btn btn-main" onclick="saveHr1()">저장</button>
+      </div>
+      <div class="breath" id="bg"><div class="ball" id="bball"></div>
+        <div><div class="bph" id="bph">코로 들이마셔요</div><div class="bsec" id="bsec">4</div>
+        <div class="bsteps"><span id="bs0">👃 들이마시기 4초</span> → <span id="bs1">✋ 멈추기 4초</span> → <span id="bs2">👄 내쉬기 6초</span></div></div>
+        <button class="btn btn-ghost voicebtn" id="vbtn" onclick="toggleVoice()">${voiceOn?'🔊 음성 안내 켜짐':'🔇 음성 안내 꺼짐'}</button></div>
+      <div class="warn" id="w"></div>
       <div class="actions">
-        <button class="btn btn-ghost" onclick="cancelTimer()">◀ 이전</button>
-        <button class="btn btn-green" style="flex:1;font-size:22px;padding:18px" onclick="askAfter(false)">✅ 회복 완료 (목표 안에 들어왔어요)</button>
+        <button class="btn btn-green" style="flex:1;font-size:22px;padding:16px" onclick="askAfter(false)">✅ 회복 완료 (목표 안에 들어왔어요)</button>
       </div></div>`;
     updateTimer();
   }
-  if(L.step===5){ A.innerHTML = resultHTML(L); }
+  if(L.step===5){ A.innerHTML = helper("이것이 오늘의 감정 조절 처방전이에요! QR코드를 찍으면 휴대폰으로 가져갈 수 있어요.",
+      ["점수와 처방전을 보여 줘요", "QR을 찍게 도와줘요", "[기록 지우고 다음 친구 시작]"], true) + resultHTML(L); }
+}
+/* 도우미가 보는 안내: 할 말 + 할 일 */
+function helper(say, todo, compact){
+  if(compact) return `<div class="helper compact"><div class="hsay">🙋 <b>도우미가 말해요</b> “${say}”</div>
+    <div class="htodo1">${todo.map((t,i)=>`${"①②③④"[i]} ${t}`).join(" &nbsp; ")}</div></div>`;
+  return `<div class="helper"><div class="hsay">🙋 <b>도우미가 말해요</b> “${say}”</div>
+    <ol class="htodo">${todo.map(t=>`<li>${t}</li>`).join("")}</ol></div>`;
 }
 function numInput(id,val){
   return `<div class="numrow"><input id="${id}" type="number" inputmode="numeric" min="40" max="230" value="${val??''}" placeholder="0"><span class="unit">bpm</span></div>`;
@@ -2588,12 +2647,13 @@ function readNum(){
   if(!v || v<40 || v>230){ w.style.display="block"; w.textContent="40~230 사이 숫자를 입력해 주세요."; return null; }
   return v;
 }
-function back(){ lanes[cur].step--; renderStep(); }
-function saveRest(){ const v=readNum(); if(v==null) return; clearInterval(restTick); stopRain(); lanes[cur].rest=v; lanes[cur].step=2; renderStep(); }
+function back(){ clearInterval(exTick); stopMusic(); const L=lanes[cur]; L.step = L.step===3 ? 1 : L.step-1; renderStep(); }
+function saveRest(){ const v=readNum(); if(v==null) return; clearInterval(restTick); stopRain(); lanes[cur].rest=v; lanes[cur].method="breath"; lanes[cur].step=3; renderStep(); }
 function savePeak(){
   const v=readNum(); if(v==null) return;
   const L=lanes[cur];
   if(v<=L.rest+RANGE){ const w=$("#w"); w.style.display="block"; w.textContent=`안정 시 심박수(${L.rest})보다 충분히 높아야 해요. 숫자를 다시 확인해 주세요.`; return; }
+  clearInterval(exTick); stopMusic();
   L.peak=v; L.start=Date.now(); L.end=null; L.step=4;
   if(L.method==="mind") startBowl();
   renderStep();
@@ -2601,10 +2661,24 @@ function savePeak(){
 function pickMethod(k){ const L=lanes[cur]; L.method=k; L.step=3; renderStep(); }
 function cancelTimer(){ stopBowl(); const L=lanes[cur]; L.start=null; L.end=null; L.step=3; renderStep(); }
 
+/* 심박 회복: 회복 2분째 심박수 저장 */
+function saveHr1(){
+  const L=lanes[cur], v=Math.round(+$("#h1").value), m=$("#h1msg");
+  if(!v||v<40||v>230){ m.textContent="40~230 사이 숫자를 입력해 주세요."; return; }
+  L.hr1=v; $("#h1box").classList.remove("now"); $("#h1box").classList.add("saved");
+  m.textContent = L.peak!=null ? `저장했어요: ${v}bpm (${HRR_SEC/60}분 동안 ${L.peak-v}bpm 내려감)` : `저장했어요: ${v}bpm`;
+}
+
 /* 회복 완료 / 시간 종료: 회복 후 심박수 입력 */
 function askAfter(timedOut){
-  stopBowl();
   const L=lanes[cur];
+  if(L.peak==null){
+    $("#pkbox").classList.add("now"); $("#pkmsg").textContent="먼저 운동 직후 심박수를 입력하고 [저장]을 눌러 주세요."; return;
+  }
+  if(!timedOut && L.hr1==null && elapsed(L)>=HRR_SEC){
+    $("#h1box").classList.add("now"); $("#h1msg").textContent=`먼저 ${HRR_SEC/60}분 심박수를 입력하고 [저장]을 눌러 주세요.`; return;
+  }
+  stopBowl();
   if(!L.end) L.end = Date.now();
   L.timedOut = timedOut || elapsed(L) > RECOVER_SEC;
   if(L.timedOut) L.end = L.start + RECOVER_SEC*1000;
@@ -2614,6 +2688,7 @@ function askAfter(timedOut){
       const v=Math.round(+$("#v2").value);
       if(!v||v<40||v>230){ $("#w2").style.display="block"; $("#w2").textContent="40~230 사이 숫자를 입력해 주세요."; return false; }
       L.after=v;
+      if(L.hr1==null) L.hr1=v;   // 2분 전에 회복했거나 2분 값을 놓친 경우
       L.step=5; renderStep(); return true;
     }, ()=>{ if(!L.timedOut){ L.end=null; if(L.method==="mind") startBowl(); } });
   setTimeout(()=>$("#v2")&&$("#v2").focus(),50);
@@ -2628,23 +2703,81 @@ function updateTimer(){
   });
   const L=lanes[cur], t=$("#t");
   if(t && L.step===4){ t.textContent = fmt(elapsed(L)); t.classList.toggle("over", elapsed(L)>RECOVER_SEC-30); }
+  const hb=$("#h1box");
+  if(hb && L.step===4 && L.hr1==null && elapsed(L)>=HRR_SEC && !hb.classList.contains("now")){
+    hb.classList.add("now"); $("#h1msg").textContent=`⏰ ${HRR_SEC/60}분! 지금 밴드 숫자를 입력하고 [저장]을 눌러요.`;
+  }
   
 }
 tick = setInterval(updateTimer, 500);
 
+/* ===== 호흡법 가이드: 4초 들이마시기 → 4초 멈추기 → 6초 내쉬기 반복 ===== */
+const BREATH = [
+  {sec:4, txt:"코로 천천히 들이마셔요", say:"코로 들이마셔요", from:.55, to:1},
+  {sec:4, txt:"숨을 잠깐 멈춰요",       say:"멈춰요",           from:1,   to:1},
+  {sec:6, txt:"입으로 길게 내쉬어요",   say:"입으로 길게 내쉬어요", from:1,   to:.55}];
+/* 음성 안내: 태블릿에 들어 있는 한국어 음성(인터넷 없이도 동작)으로 읽어 줘요 */
+let voiceOn = true, lastPhase = -1;
+/* 패드 소리 설정: 여러 대를 함께 쓸 때 한 대만 켜 두면 소리가 겹치지 않아요 (이 기기에 기억) */
+let padSound = true;
+try{ padSound = localStorage.getItem("padSound") !== "off"; }catch(e){}
+function showPadSound(){ const b=$("#padSnd"); if(b) b.textContent = padSound ? "🔊 음악·효과음 켬" : "🔇 음악·효과음 끔"; }
+function togglePadSound(){
+  padSound=!padSound; try{ localStorage.setItem("padSound", padSound?"on":"off"); }catch(e){}
+  if(!padSound){ stopMusic(); stopRain(); }
+  showPadSound();
+}
+setTimeout(showPadSound,0);
+function announce(t){   // 운동 중 안내 음성 (패드 소리 설정을 따름)
+  try{
+    if(!padSound || !window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(t); u.lang="ko-KR"; u.rate=0.95;
+    const ko=speechSynthesis.getVoices().find(v=>/ko/i.test(v.lang)); if(ko) u.voice=ko;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function say(t){
+  try{
+    if(!voiceOn || !padSound || !window.speechSynthesis) return;   // 소리 끈 패드는 호흡 음성도 꺼요
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(t); u.lang = "ko-KR"; u.rate = 0.9; u.pitch = 1.05;
+    const ko = speechSynthesis.getVoices().find(v => /ko/i.test(v.lang)); if(ko) u.voice = ko;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function toggleVoice(){
+  voiceOn = !voiceOn; lastPhase = -1;
+  if(!voiceOn && window.speechSynthesis) speechSynthesis.cancel();
+  const b=$("#vbtn"); if(b) b.textContent = voiceOn ? "🔊 음성 안내 켜짐" : "🔇 음성 안내 꺼짐";
+}
+setInterval(()=>{
+  const bg=$("#bg"), L=lanes[cur];
+  if(!bg || !L || !L.start){ if(lastPhase!==-1){ lastPhase=-1; try{ speechSynthesis.cancel(); }catch(e){} } return; }
+  let s=((Date.now()-L.start)/1000) % BREATH.reduce((a,b)=>a+b.sec,0), i=0;
+  while(s>=BREATH[i].sec){ s-=BREATH[i].sec; i++; }
+  const ph=BREATH[i], k=s/ph.sec;
+  $("#bph").textContent=ph.txt;
+  $("#bsec").textContent=Math.ceil(ph.sec-s);
+  $("#bball").style.transform=`scale(${ph.from+(ph.to-ph.from)*k})`;
+  BREATH.forEach((_,j)=>$("#bs"+j).classList.toggle("on", j===i));
+  if(i!==lastPhase){ lastPhase=i; say(ph.say); }
+},100);
+
 /* ===== 규칙 기반 분석 ===== */
 function analyze(L){
   const t = elapsed(L);
+  // 심박 회복(HRR): 회복 2분 동안 내려간 심박수
+  //  점수는 70~100점: 22bpm 미만 → 70~79점 · 22~43bpm → 80~89점 · 44bpm 이상 → 90~100점(60bpm 이상 100점)
+  //  22bpm은 운동 연구의 2분 기준, 44bpm(그 2배)은 체험용으로 정한 값
+  const hrr = Math.max(0, L.peak - (L.hr1 ?? L.after));
   let score;
-  if(!L.timedOut){
-    score = Math.round(100 - 69 * Math.min(t,RECOVER_SEC)/RECOVER_SEC);  // 31~100점
-  } else {
-    const ratio = Math.max(0, Math.min(1, (L.peak - L.after)/Math.max(1, L.peak - L.rest)));
-    score = Math.round(30 * ratio);                                       // 0~30점
-  }
-  score = Math.max(0, Math.min(100, score));
-  const band = score>=70 ? 2 : score>=31 ? 1 : 0;
-  return {t, score, band};
+  if(hrr < 22)      score = 70 + Math.round(9 * hrr / 22);
+  else if(hrr < 44) score = 80 + Math.round(9 * (hrr - 22) / 21);
+  else              score = 90 + Math.round(10 * Math.min(hrr - 44, 16) / 16);
+  score = Math.max(70, Math.min(100, score));
+  const band = score>=90 ? 2 : score>=80 ? 1 : 0;
+  return {t, score, band, hrr};
 }
 
 const BAND = [
@@ -2768,7 +2901,7 @@ function showModal(title, html, onOk, onCancel){
 function closeModal(){ $("#modal").classList.remove("on"); if(mCancel) mCancel(); }
 function askReset(i){
   showModal("기록을 지울까요?", `${i+1}번 체험자의 심박수 기록을 모두 지워요. 지운 기록은 되돌릴 수 없어요.`,
-    ()=>{ clearInterval(restTick); stopRain(); stopBowl(); lanes[i]=blank(); goHome(); });
+    ()=>{ clearInterval(restTick); clearInterval(exTick); stopMusic(); stopRain(); stopBowl(); lanes[i]=blank(); goHome(); });
 }
 function askResetAll(){
   showModal("모두 지울까요?", "5명 모두의 기록을 지워요. 지운 기록은 되돌릴 수 없어요.",
@@ -2776,6 +2909,16 @@ function askResetAll(){
 }
 window.addEventListener("beforeunload", e=>{ if(lanes.some(l=>l.step>=4 && l.step<5)){ e.preventDefault(); e.returnValue=""; } });
 
+
+/* ===== 점수대별 맞춤 처방 (왼쪽: 감정 조절을 더 잘하기, 오른쪽: 회복탄력 능력 높이기) ===== */
+const RX = [
+  { emo:["화날 때 천천히 10까지 세기","하루 3번 4-4-6 호흡하기","내 기분을 말로 표현하기"],
+    res:["매일 10분 걷기","일찍 자고 푹 자기","물 자주 마시기"] },                 // 70~79점
+  { emo:["내 감정 알아차리기 (감정 일기)","긴장될 때 깊게 호흡하기","부정적 생각을 긍정으로 바꾸기"],
+    res:["줄넘기·달리기 꾸준히 하기","규칙적인 수면 습관 지키기","하루 5분 마음챙김하기"] },  // 80~89점
+  { emo:["친구의 감정도 살펴 주기","힘들 때 나만의 회복법 쓰기","감사한 일 3가지 적기"],
+    res:["새로운 운동에 도전하기","지금의 수면 습관 유지하기","명상 시간 조금씩 늘리기"] }   // 90~100점
+];
 
 /* ===== 고화질 처방전 그림(1546×1017) 위에 숫자 겹치기 ===== */
 function picResult(L){
@@ -2791,8 +2934,11 @@ function picResult(L){
     ${pill(327,182,"#fd476f",L.peak)}
     ${pill(567,184,"#30bd57",L.after)}
     <div class="ov" style="${at(598,688,134,40)};background:#fdedf3;color:#1a2a6e;${fs(30)}">${timeTxt}</div>
+    <div class="ov" style="${at(134,650,400,70)};background:#ffebf4;color:#1f2a5c;font-weight:600;${fs(21)};line-height:1.45;justify-content:flex-start;text-align:left;white-space:nowrap">힘든 활동 뒤 다시 안정을 찾는 힘,<br>회복탄력성을 보여 주는 신호예요.</div>
+    ${[[120,290,"#fdfdff",RX[band].emo],[500,247,"#fdfffb",RX[band].res]].map(([x,w,bg,list])=>
+      `<div class="ov" style="${at(x,874,w,100)};background:${bg};flex-direction:column;align-items:flex-start;justify-content:space-around;${fs(19)};color:#1f2a5c;font-weight:600;text-align:left;white-space:nowrap">${list.map(s=>`<span>${s}</span>`).join("")}</div>`).join("")}
     <div class="ov" style="${at(858,455,128,43)};background:#fdf6f9;color:#1f2a5c;${fs(38)}">${score}점</div>
-    <div class="ov" style="${at(856,498,132,32)};background:#fdf6f9;color:#2b9b4a;${fs(21)}">(${B.name})</div>
+    <div class="ov" style="${at(842,498,160,32)};background:#fdf6f9;color:#2b9b4a;${fs(18)};white-space:nowrap">(${B.name})</div>
     <div class="ov" style="${at(1046,352,288,176)};background:#fef6e7;flex-direction:column;gap:.3em;padding:0 .3em;${fs(20)};color:#1f2a5c;font-weight:600;line-height:1.45">
       <b style="color:#e8401f;${fs(24)};line-height:1.3">${B.title}</b><span>${B.text}</span></div>
     <div class="ov" style="${at(874,596,420,112)};background:#fbfefd;flex-direction:column;align-items:flex-start;justify-content:space-around;${fs(19)};color:#1f2a5c;font-weight:600;text-align:left;white-space:nowrap">
@@ -2812,10 +2958,101 @@ function startRest(){
     if(!$("#rt")){ clearInterval(restTick); stopRain(); return; }
     const left=(end-Date.now())/1000;
     t.textContent=fmt(Math.ceil(Math.max(0,left)));
-    if(left<=0){ clearInterval(restTick); stopRain(); t.classList.add("done"); m.innerHTML="<b>✅ 1분 끝! 지금 스마트밴드 숫자를 입력하세요.</b>"; $("#v").focus(); }
+    if(left<=0){ clearInterval(restTick); stopRain(); t.classList.add("done"); m.innerHTML="<b>✅ 1분 끝! 밴드 숫자를 확인하고 아래에 입력하세요.</b>"; $("#restIn").style.display="block"; $("#v").focus(); }
   },250);
 }
 
+
+/* ===== 운동 음악: 앱이 직접 만드는 신나는 비트(인터넷·저작권 걱정 없음) ===== */
+let music=null;
+function startMusic(){
+  stopMusic(); if(!padSound) return;
+  try{
+    const C=window.AudioContext||window.webkitAudioContext; const ac=new C();
+    const out=ac.createGain(); out.gain.value=0.55; out.connect(ac.destination);
+    const BPM=140, step=60/BPM/4;           // 16분음표 길이
+    const noise=ac.createBuffer(1,ac.sampleRate*0.2,ac.sampleRate), nd=noise.getChannelData(0);
+    for(let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
+    const kick=t=>{ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(45,t+0.12);
+      g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.connect(g); g.connect(out); o.start(t); o.stop(t+0.22); };
+    const hat=(t,v)=>{ const s=ac.createBufferSource(), f=ac.createBiquadFilter(), g=ac.createGain(); s.buffer=noise; f.type="highpass"; f.frequency.value=7000;
+      g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.05); s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t+0.06); };
+    const clap=t=>{ const s=ac.createBufferSource(), f=ac.createBiquadFilter(), g=ac.createGain(); s.buffer=noise; f.type="bandpass"; f.frequency.value=1500;
+      g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.15); s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t+0.16); };
+    const tone=(t,f,d,v,type)=>{ const o=ac.createOscillator(), g=ac.createGain(); o.type=type; o.frequency.value=f;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+0.01); g.gain.exponentialRampToValueAtTime(0.001,t+d); o.connect(g); g.connect(out); o.start(t); o.stop(t+d+0.02); };
+    const hz=m=>440*Math.pow(2,(m-69)/12);
+    const roots=[45,41,48,43];               // A-F-C-G 코드 진행 (마디마다)
+    const arp=[0,7,12,16,12,7,16,19];         // 8분음표 아르페지오
+    let n=0, next=ac.currentTime+0.1;
+    const timer=setInterval(()=>{
+      while(next < ac.currentTime+0.2){
+        const s=n%16, bar=Math.floor(n/16)%4, r=roots[bar], t=next;
+        if(s%4===0) kick(t);
+        if(s===4||s===12) clap(t);
+        hat(t, s%2 ? 0.12 : 0.06);
+        if(s%2===0) tone(t, hz(r-12+(s%4?12:0)), step*1.8, 0.28, "sawtooth");   // 베이스
+        if(s%2===0) tone(t, hz(r+12+arp[(s/2)%8]), step*1.6, 0.10, "square");   // 멜로디
+        n++; next+=step;
+      }
+    },50);
+    music={ac,out,timer};
+  }catch(e){ music=null; }
+}
+function stopMusic(){
+  if(!music) return;
+  const m=music; music=null; clearInterval(m.timer);
+  try{ m.out.gain.setTargetAtTime(0,m.ac.currentTime,0.15); setTimeout(()=>m.ac.close(),800); }catch(e){}
+}
+
+/* ===== 미션1: 운동 타이머 (0:00부터 최대 5분) ===== */
+let exTick=null, lastCheck=0;
+/* 30초마다: 띵동 소리 + "밴드 확인" 안내 */
+function checkBand(m){
+  m.innerHTML=`<b style="color:#b45309">⌚ 밴드 확인! 잠깐 멈추고 손목을 보여 주세요</b>`;
+  const box=m.closest(".restbox"); if(box){ box.classList.add("check"); setTimeout(()=>box.classList.remove("check"),4000); }
+  setTimeout(()=>{ if($("#etm")===m && !m.textContent.includes("달성")) m.textContent=`다시 운동! 다음 확인까지 ${CHECK_SEC}초`; },4000);
+  if(music){ try{ const g=music.out.gain, n=music.ac.currentTime; g.setTargetAtTime(0.15,n,0.1); g.setTargetAtTime(0.55,n+3.5,0.3); }catch(e){} }  // 안내 동안 음악 줄이기
+  setTimeout(()=>announce("심박수를 확인하세요"),700);
+  if(padSound) try{
+    const ac=music?music.ac:new (window.AudioContext||window.webkitAudioContext)(), t=ac.currentTime;
+    [[988,0],[1319,0.18]].forEach(([f,d])=>{ const o=ac.createOscillator(), g=ac.createGain(); o.type="sine"; o.frequency.value=f;
+      g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(0.5,t+d+0.01); g.gain.exponentialRampToValueAtTime(0.001,t+d+0.5);
+      o.connect(g); g.connect(ac.destination); o.start(t+d); o.stop(t+d+0.55); });
+  }catch(e){}
+}
+function startEx(){
+  clearInterval(exTick);
+  const st=Date.now(), b=$("#etb"), m=$("#etm"), t=$("#et"); lastCheck=0;
+  t.classList.remove("done"); b.textContent="🔥 다시 시작"; startMusic();
+  m.textContent=`버피테스트! 목표 ${TARGET}bpm, 힘내세요!`;
+  exTick=setInterval(()=>{
+    if(!$("#et")){ clearInterval(exTick); stopMusic(); return; }
+    const s=Math.min(EX_SEC,(Date.now()-st)/1000);
+    t.textContent=fmt(Math.ceil(EX_SEC-s));
+    const c=Math.floor(s/CHECK_SEC);
+    if(c>lastCheck && s<EX_SEC){ lastCheck=c; checkBand(m); }
+    if(s>=EX_SEC){ clearInterval(exTick); stopMusic(); finishEx(); }
+  },250);
+}
+
+
+/* 운동 끝 → 바로 회복(심호흡) 시작. 5대가 같은 시간표로 움직여요 */
+function finishEx(){
+  const L=lanes[cur];
+  L.peak=null; L.hr1=null; L.after=null; L.timedOut=false; L.method="breath";
+  L.start=Date.now(); L.end=null; L.step=4;
+  announce("운동 끝! 심박수를 확인하고 심호흡을 시작하세요");
+  renderStep();
+  setTimeout(()=>$("#pk")&&$("#pk").focus(),50);
+}
+function savePeakNow(){
+  const L=lanes[cur], v=Math.round(+$("#pk").value), m=$("#pkmsg");
+  if(!v||v<40||v>230){ m.textContent="40~230 사이 숫자를 입력해 주세요."; return; }
+  if(v<=L.rest+RANGE){ m.textContent=`안정 시 심박수(${L.rest})보다 높아야 해요. 숫자를 다시 확인해 주세요.`; return; }
+  L.peak=v; $("#pkbox").classList.remove("now"); $("#pkbox").classList.add("saved");
+  m.textContent = v>=LIMIT ? `저장했어요: ${v}bpm (⚠️ ${LIMIT} 이상, 편하게 쉬게 해 주세요)` : `저장했어요: ${v}bpm${v>=TARGET?" 🎉 목표 달성!":""}`;
+}
 
 /* ===== 싱잉볼 소리 (마음챙김을 누르면 울려요) ===== */
 const BOWL_FILE = "";   // 싱잉볼 소리 파일이 있으면 여기에 넣어요 (비어 있으면 앱이 직접 만든 소리)
@@ -2851,6 +3088,7 @@ function stopBowl(){
 /* ===== 자연의 소리: 새소리 + 잔잔한 바람 (1분 쉬는 동안) ===== */
 let rain=null;
 function startRain(){
+  if(!padSound) return;
   try{
     const C=window.AudioContext||window.webkitAudioContext; const ac=new C();
     const out=ac.createGain(); out.gain.setValueAtTime(0,ac.currentTime); out.gain.linearRampToValueAtTime(0.7,ac.currentTime+2); out.connect(ac.destination);
@@ -2897,7 +3135,7 @@ function stopRain(){
 const RESULT_URL = "https://solovelykwak-art.github.io/heart-result/";   // 휴대폰 결과 페이지 주소
 function resultLink(L){
   const t=Math.round(elapsed(L));
-  return `${RESULT_URL}?r=${L.rest}&p=${L.peak}&a=${L.after}&t=${t}&o=${L.timedOut?1:0}`;
+  return `${RESULT_URL}?r=${L.rest}&p=${L.peak}&a=${L.after}&h=${L.hr1??L.after}&t=${t}&o=${L.timedOut?1:0}`;
 }
 function qrSVG(text){ const q=qrcode(0,'M'); q.addData(text); q.make(); return q.createSvgTag({cellSize:4, margin:2, scalable:true}); }
 function resultHTML(L){
@@ -2916,7 +3154,7 @@ function resultHTML(L){
   const q=new URLSearchParams(location.search);
   if(!q.has('r')) return;
   const n=k=>Math.round(+q.get(k)||0);
-  const L={rest:n('r'), peak:n('p'), after:n('a'), timedOut:q.get('o')==='1', start:0, end:n('t')*1000};
+  const L={rest:n('r'), peak:n('p'), after:n('a'), hr1:(q.get('h')?n('h'):null), timedOut:q.get('o')==='1', start:0, end:n('t')*1000};
   clearInterval(tick);
   window.onbeforeunload=null;
   document.body.innerHTML=`<div class="wrap phone">${picResult(L)}
