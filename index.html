@@ -2625,9 +2625,10 @@ function renderStep(){
       <div class="actions"><button class="btn btn-ghost" onclick="back()">◀ 이전</button></div></div>`;
   }
   if(L.step===4){
+    const M=METHODS[L.method||"breath"], isBreath=(L.method||"breath")==="breath";
     A.innerHTML = `<div class="box">
-      <h2>③ 미션2 · ⌚ 밴드 보여 주기 → 🚶 정리운동 ${MOVE_SEC}초 → 🌬️ 심호흡으로 심박수 DOWN 💧</h2>
-      ${helper(`수고했어요! 먼저 손목 밴드를 저에게 보여 주세요. 그다음 팔다리 털기, 어깨 돌리기, 무릎 돌리기를 10초씩 하고, 파란 공과 목소리를 따라 심호흡해 보세요.`,
+      <h2>③ 미션2 · ⌚ 밴드 보여 주기 → 🚶 정리운동 ${MOVE_SEC}초 → ${M.em} ${M.name}으로 심박수 DOWN 💧</h2>
+      ${helper(`수고했어요! 먼저 손목 밴드를 저에게 보여 주세요. 그다음 팔다리 털기, 어깨 돌리기, 무릎 돌리기를 10초씩 하고, ${isBreath?"파란 공과 목소리를 따라 심호흡해 보세요":"내가 고른 "+M.name+"으로 심박수를 낮춰 보세요"}.`,
         [`친구가 보여 주는 밴드 숫자를 '운동 직후 심박수'에 입력하고 [저장] (${COOL[0].sec}초 안에)`, `${HRR_SEC/60}분 알림이 깜빡이면 밴드 숫자를 입력하고 [저장]`, `밴드가 ${L.rest-RANGE}~${L.rest+RANGE} 안에 들어오면 [회복 완료] (${RECOVER_SEC/60}분이 지나면 저절로 끝나요)`], true)}
       <div style="display:flex;align-items:center;gap:16px"><div class="timer" id="t" style="font-size:56px;margin:0">0:00</div>
         <p class="hint" style="margin:0">기준값 <b>${L.rest}bpm</b> · 회복 목표 <b>${L.rest-RANGE}~${L.rest+RANGE}bpm</b> (최대 ${RECOVER_SEC/60}분)</p></div>
@@ -2644,12 +2645,14 @@ function renderStep(){
         <button class="btn btn-main" onclick="saveHr1()">저장</button>
       </div>
       <div class="cool" id="cool"><span class="cem" id="cem">${COOL[0].em}</span><div><b id="cname">${COOL[0].name}</b>
-        <div class="csteps">${COOL.map((c,j)=>`<span id="cs${j}">${c.em} ${c.short||c.name} ${c.sec}초</span>`).join(" → ")} → 🌬️ 심호흡</div></div>
+        <div class="csteps">${COOL.map((c,j)=>`<span id="cs${j}">${c.em} ${c.short||c.name} ${c.sec}초</span>`).join(" → ")} → ${M.em} ${M.name}</div></div>
         <span class="ccount" id="ccount">10</span></div>
-      <div class="breath" id="bg" style="display:none"><div class="ball" id="bball"></div>
+      ${isBreath?`<div class="breath" id="bg" style="display:none"><div class="ball" id="bball"></div>
         <div><div class="bph" id="bph">코로 들이마셔요</div><div class="bsec" id="bsec">4</div>
         <div class="bsteps"><span id="bs0">👃 들이마시기 4초</span> → <span id="bs1">✋ 멈추기 4초</span> → <span id="bs2">👄 내쉬기 6초</span></div></div>
-        <button class="btn btn-ghost voicebtn" id="vbtn" onclick="toggleVoice()">${voiceOn?'🔊 음성 안내 켜짐':'🔇 음성 안내 꺼짐'}</button></div>
+        <button class="btn btn-ghost voicebtn" id="vbtn" onclick="toggleVoice()">${voiceOn?'🔊 음성 안내 켜짐':'🔇 음성 안내 꺼짐'}</button></div>`
+      :`<div class="breath" id="bg" data-m="${L.method}" style="display:none"><div style="font-size:64px;line-height:1">${M.em}</div>
+        <div><div class="bph">${M.name}</div><div style="font-size:18px;line-height:1.6;margin-top:6px">${M.guide}</div></div></div>`}
       <div class="warn" id="w"></div>
       <div class="actions">
         <button class="btn btn-green" style="flex:1;font-size:22px;padding:16px" onclick="askAfter(false)">✅ 회복 완료 (목표 안에 들어왔어요)</button>
@@ -2665,7 +2668,7 @@ function getBest(){ try{ const b=JSON.parse(localStorage.getItem("bestPeak")||"n
 function saveBest(v){ if(v==null) return; const b=getBest(); if(b==null||v>b){ try{ localStorage.setItem("bestPeak",JSON.stringify({day:today(),peak:v})); }catch(e){} } }
 function bestLine(){ const b=getBest(); return b==null ? " 오늘 첫 번째 기록의 주인공이 되어 보세요!" : ` 지금까지 오늘 최고 기록은 <b>${b}bpm</b>이에요. 이 기록에 도전해 볼까요?`; }
 /* 단계 이동 버튼: 테스트하거나 중간에 앞뒤로 오갈 때 써요 */
-const NAV=[{step:1,label:"① 안정"},{step:3,label:"② 운동"},{step:4,label:"③ 회복"},{step:5,label:"④ 결과"}];
+const NAV=[{step:1,label:"① 안정"},{step:2,label:"② 회복법"},{step:3,label:"③ 운동"},{step:4,label:"④ 회복"},{step:5,label:"⑤ 결과"}];
 function moveStep(d){ const i=NAV.findIndex(n=>n.step===lanes[cur].step); const n=NAV[i+d]; if(n) goStep(n.step); }
 function goStep(to){
   const L=lanes[cur]; if(to===L.step) return;
@@ -2681,7 +2684,8 @@ function doStep(to){
   clearInterval(restTick); clearInterval(exTick); stopMusic(); stopRain(); stopBowl();
   $("#modal").classList.remove("on");
   if(to>=3 && L.rest==null) L.rest=85;
-  if(to===4){ L.start=Date.now(); L.end=null; L.after=null; L.timedOut=false; L.method="breath"; lastCool=-1; lastPhase=-1; }
+  if(to>=3 && !L.method) L.method="breath";
+  if(to===4){ L.start=Date.now(); L.end=null; L.after=null; L.timedOut=false; lastCool=-1; lastPhase=-1; }
   if(to===5){
     if(L.peak==null) L.peak=Math.max(160, L.rest+40);
     if(L.hr1==null) L.hr1 = L.after ?? L.peak-30;
@@ -2708,7 +2712,7 @@ function readNum(){
   return v;
 }
 function back(){ clearInterval(exTick); stopMusic(); const L=lanes[cur]; L.step = L.step===3 ? 1 : L.step-1; renderStep(); }
-function saveRest(){ const v=readNum(); if(v==null) return; clearInterval(restTick); stopRain(); lanes[cur].rest=v; lanes[cur].method="breath"; lanes[cur].step=3; renderStep(); }
+function saveRest(){ const v=readNum(); if(v==null) return; clearInterval(restTick); stopRain(); lanes[cur].rest=v; lanes[cur].step=2; renderStep(); }
 function savePeak(){
   const v=readNum(); if(v==null) return;
   const L=lanes[cur];
@@ -2824,8 +2828,12 @@ setInterval(()=>{
     if(lastCool!==j){ lastCool=j; if(j>0) say(COOL[j].say||COOL[j].name); }   // 첫 안내(밴드 보여 주기)는 운동 끝 안내에서 말해요
     lastPhase=-1; return; }
   lastCool=-1;
-  if(cool && cool.style.display!=="none"){ cool.style.display="none"; bg.style.display="flex"; say("이제 심호흡을 시작해요"); lastPhase=-2; return; }
+  const mk=bg.dataset.m;
+  if(cool && cool.style.display!=="none"){ cool.style.display="none"; bg.style.display="flex";
+    if(mk){ say(`이제 ${METHODS[mk].name}을 시작해요. ${METHODS[mk].guide}`); if(mk==="mind" && !bowlTick) startBowl(); lastPhase=-3; return; }
+    say("이제 심호흡을 시작해요"); lastPhase=-2; return; }
   bg.style.display="flex";
+  if(mk){ if(mk==="mind" && !bowlTick && !L.end) startBowl(); return; }
   if(lastPhase===-2 && el < COOL_SEC+1.6) return;   // 시작 안내 말이 끝나도록 잠깐 기다려요
   let s=(el-COOL_SEC) % BREATH.reduce((a,b)=>a+b.sec,0), i=0;
   while(s>=BREATH[i].sec){ s-=BREATH[i].sec; i++; }
@@ -3110,10 +3118,10 @@ function startEx(){
 }
 
 
-/* 운동 끝 → 바로 회복(심호흡) 시작. 5대가 같은 시간표로 움직여요 */
+/* 운동 끝 → 바로 회복(고른 회복법) 시작. 5대가 같은 시간표로 움직여요 */
 function finishEx(){
   const L=lanes[cur];
-  L.peak=null; L.hr1=null; L.after=null; L.timedOut=false; L.method="breath";
+  L.peak=null; L.hr1=null; L.after=null; L.timedOut=false; if(!L.method) L.method="breath";
   L.start=Date.now(); L.end=null; L.step=4;
   announce("운동 끝! 손목 밴드를 도우미에게 보여 주세요");
   renderStep();
