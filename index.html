@@ -2536,10 +2536,11 @@ function renderStep(){
       <p class="hint">편하게 앉아 1분 동안 쉰 뒤, 스마트밴드에 나온 숫자를 입력하세요. 이 숫자가 '기준값'이 돼요.</p>
       <div class="restbox"><div class="timer" id="rt">${fmt(REST_SEC)}</div>
         <button class="btn btn-green" id="rtb" onclick="startRest()">⏱ 1분 쉬기 시작</button>
-        <div class="rtmsg" id="rtm">버튼을 누르고 편하게 앉아 숨을 고르세요.</div></div>
+        <div class="rtmsg" id="rtm">버튼을 누르고 편하게 앉아 숨을 고르세요. 1분이 끝나면 입력칸이 나타나요.</div></div>
+      <div id="restIn" style="display:${L.rest!=null?'block':'none'}">
       ${numInput("v", L.rest)}
       <div class="warn" id="w"></div>
-      <div class="actions"><button class="btn btn-main" onclick="saveRest()">다음 ▶</button></div></div>`;
+      <div class="actions"><button class="btn btn-main" onclick="saveRest()">다음 ▶</button></div></div></div>`;
   }
   if(L.step===3){
     A.innerHTML = `<div class="box">
@@ -2808,11 +2809,12 @@ function startRest(){
   const end=Date.now()+REST_SEC*1000, b=$("#rtb"), m=$("#rtm"), t=$("#rt");
   b.textContent="⏱ 다시 시작"; m.textContent="🐦 새소리를 들으며 편하게 숨을 골라요…";
   stopRain(); startRain();
+  $("#restIn").style.display="none";
   restTick=setInterval(()=>{
     if(!$("#rt")){ clearInterval(restTick); stopRain(); return; }
     const left=(end-Date.now())/1000;
     t.textContent=fmt(Math.ceil(Math.max(0,left)));
-    if(left<=0){ clearInterval(restTick); stopRain(); t.classList.add("done"); m.innerHTML="<b>✅ 1분 끝! 지금 스마트밴드 숫자를 입력하세요.</b>"; $("#v").focus(); }
+    if(left<=0){ clearInterval(restTick); stopRain(); t.classList.add("done"); m.innerHTML="<b>✅ 1분 끝! 지금 스마트밴드 숫자를 입력하세요.</b>"; $("#restIn").style.display="block"; $("#v").focus(); }
   },250);
 }
 
