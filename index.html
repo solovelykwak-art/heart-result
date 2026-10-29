@@ -2487,8 +2487,8 @@ const METHODS = {
     guide:"코로 4초 천천히 들이마시고 → 4초 멈추고 → 입으로 6초 동안 길게 내쉬어요. 배가 풍선처럼 부풀었다 줄어드는 것을 느껴 보세요."},
   stretch:{em:"🧘",name:"스트레칭",desc:"천천히 몸을 늘이며 긴장 풀기",
     guide:"두 팔을 머리 위로 쭉 뻗고 10초, 어깨를 천천히 5번 돌리고, 목을 좌우로 기울여요. 숨은 멈추지 말고 편하게 쉬어요."},
-  mind:{em:"🔔",name:"싱잉볼 마음챙김",desc:"눈을 감고 지금 내 몸에 집중하기",
-    guide:"편하게 앉아 눈을 감아요. 싱잉볼이 30초마다 울려요. 소리가 점점 작아지며 사라질 때까지 귀를 기울이며 천천히 숨을 쉬어요."}
+  mind:{em:"🌿",name:"내 몸 마음챙김",desc:"눈을 감고 지금 내 몸에 집중하기",
+    guide:"편하게 앉아 눈을 감아요. 발끝 → 다리 → 배 → 가슴 → 어깨 → 얼굴 순서로 천천히 주의를 옮기며 몸의 느낌을 살펴봐요. 두근거리는 심장, 들숨과 날숨을 그대로 느끼고, 힘이 들어간 곳은 스르르 풀어 줘요."}
 };
 
 /* ===== 상태 (메모리에만 보관, 저장 안 함) ===== */
@@ -2596,7 +2596,7 @@ function savePeak(){
   const L=lanes[cur];
   if(v<=L.rest+RANGE){ const w=$("#w"); w.style.display="block"; w.textContent=`안정 시 심박수(${L.rest})보다 충분히 높아야 해요. 숫자를 다시 확인해 주세요.`; return; }
   L.peak=v; L.start=Date.now(); L.end=null; L.step=4;
-  if(L.method==="mind") startBowl();
+  
   renderStep();
 }
 function pickMethod(k){ const L=lanes[cur]; L.method=k; L.step=3; renderStep(); }
@@ -2616,7 +2616,7 @@ function askAfter(timedOut){
       if(!v||v<40||v>230){ $("#w2").style.display="block"; $("#w2").textContent="40~230 사이 숫자를 입력해 주세요."; return false; }
       L.after=v;
       L.step=5; renderStep(); return true;
-    }, ()=>{ if(!L.timedOut){ L.end=null; if(L.method==="mind") startBowl(); } });
+    }, ()=>{ if(!L.timedOut){ L.end=null;  } });
   setTimeout(()=>$("#v2")&&$("#v2").focus(),50);
 }
 
@@ -2658,7 +2658,7 @@ const BAND = [
 const EMO_TIPS = {
   breath:["화가 나거나 떨릴 때 '4-4-6 호흡' 3번 하기","잠들기 전 배로 숨 쉬기 1분","내 감정 알아차리기 (감정 일기 한 줄)"],
   stretch:["긴장될 때 어깨 돌리기 5번","공부 30분마다 기지개 켜기","내 감정 알아차리기 (감정 일기 한 줄)"],
-  mind:["속상할 때 들리는 소리 3가지 세어 보기","부정적인 생각을 긍정적인 말로 바꿔 보기","내 감정 알아차리기 (감정 일기 한 줄)"]
+  mind:["속상할 때 눈 감고 내 몸의 느낌 살펴보기","부정적인 생각을 긍정적인 말로 바꿔 보기","내 감정 알아차리기 (감정 일기 한 줄)"]
 };
 const HABIT_TIPS = [
   ["매일 10분 줄넘기나 걷기로 몸 깨우기","밤에 일찍 자서 충분히 쉬기","오늘 고른 회복법을 하루 1번 연습하기"],
@@ -2819,7 +2819,7 @@ function startRest(){
 }
 
 
-/* ===== 싱잉볼 소리 (마음챙김을 누르면 울려요) ===== */
+/* ===== 싱잉볼 소리 (지금은 쓰지 않아요. 마음챙김이 내 몸 집중 방법으로 바뀌었어요) ===== */
 const BOWL_FILE = "";   // 싱잉볼 소리 파일이 있으면 여기에 넣어요 (비어 있으면 앱이 직접 만든 소리)
 function playBowl(){
   try{
