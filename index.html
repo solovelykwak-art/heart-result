@@ -2502,7 +2502,7 @@ const fmt = sec => { sec=Math.max(0,Math.round(sec)); return `${Math.floor(sec/6
 const elapsed = L => ((L.end ?? Date.now()) - L.start)/1000;
 
 /* ===== 첫 화면 ===== */
-const STATE_TXT = ["대기 중","① 안정 시 심박수","② 버피테스트","③ 회복법 고르기","④ 회복 중","⑤ 처방전 완성"];
+const STATE_TXT = ["대기 중","① 안정 시 심박수","③ 운동","② 회복법 고르기","④ 회복 중","⑤ 처방전 완성"];
 function renderHome(){
   $("#lanes").innerHTML = lanes.map((L,i)=>{
     let big = "시작하기 ▶";
@@ -2544,7 +2544,7 @@ function renderStep(){
   if(L.step===3){
     A.innerHTML = `<div class="box">
       <h2>③ 미션1 · 심박수 UP! 🔥</h2>
-      <p class="hint">버피테스트로 심박수를 올려요(8~10회, 체력에 맞게). <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b><br>운동이 끝난 순간 밴드에 나온 가장 높은 심박수를 입력하세요.</p>
+      <p class="hint"><b>운동(버피테스트, PT체조, 스쿼트, 무릎 높이 뛰기)</b>으로 심박수를 올려요(체력에 맞게). <b style="color:var(--red)">${LIMIT}bpm이 넘으면 바로 멈춰요!</b><br>운동이 끝난 순간 밴드에 나온 가장 높은 심박수를 입력하세요.</p>
       ${numInput("v", L.peak)}
       <div class="warn" id="w"></div>
       <div class="actions">

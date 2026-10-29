@@ -147,7 +147,7 @@ function twice(key,btn,label){if(armed===key){disarm();return true}disarm();arme
 function undo(btn){const d=data[mode];if(!d.hist.length)return;if(twice("u",btn,"한 번 더 누르면 되돌려요")){d.now=d.hist.pop();save();render();openPanel(mode)}}
 function resetAll(btn){if(twice("r",btn,"정말 지울까요? 한 번 더 누르세요")){data={hot:{now:null,hist:[]},cool:{now:null,hist:[]},score:{now:null,hist:[]}};save();render();closePanel()}}
 
-const tips=["🔥 2분 동안 쉬지 않고 버피! 150을 넘겨 봐요","💚 운동 뒤 심호흡으로 빨리 회복하는 것이 진짜 실력이에요","🫁 코로 4초 들이마시고, 4초 멈추고, 입으로 6초 내쉬어요","🏃 회복이 빠를수록 몸과 마음의 회복탄력성이 좋아요","👀 다음 기록의 주인공은 바로 여러분!"];
+const tips=["🔥 버피테스트·PT체조·스쿼트·무릎 높이 뛰기로 심박수를 올려 봐요","💚 3분 동안 심박수를 많이 낮추는 것이 진짜 실력이에요","🫁 코로 4초 들이마시고, 4초 멈추고, 입으로 6초 내쉬어요","🏃 회복이 빠를수록 몸과 마음의 회복탄력성이 좋아요","👀 다음 기록의 주인공은 바로 여러분!"];
 let ti=0,holdUntil=0;
 function say(t){$("ticker").textContent=t;holdUntil=Date.now()+15000}
 function tick(){if(Date.now()<holdUntil)return;$("ticker").textContent=tips[ti++%tips.length]}
